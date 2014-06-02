@@ -1,11 +1,14 @@
 package rinde.logistics.pdptw.mas;
 
 import static com.google.common.collect.Lists.newArrayList;
-import static rinde.sim.util.SupplierRngs.constant;
+import static com.google.common.collect.Maps.newLinkedHashMap;
+import static rinde.sim.util.StochasticSuppliers.constant;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import javax.measure.unit.NonSI;
 import javax.measure.unit.SI;
@@ -13,7 +16,6 @@ import javax.measure.unit.SI;
 import org.apache.commons.math3.random.MersenneTwister;
 import org.apache.commons.math3.random.RandomGenerator;
 import org.apache.commons.math3.stat.descriptive.StatisticalSummary;
-import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 import org.eclipse.swt.SWT;
 import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.format.ISODateTimeFormat;
@@ -54,6 +56,8 @@ import rinde.sim.ui.renderers.PDPModelRenderer;
 import rinde.sim.ui.renderers.PlaneRoadModelRenderer;
 import rinde.sim.ui.renderers.RoadUserRenderer;
 import rinde.sim.ui.renderers.UiSchema;
+import rinde.sim.util.StochasticSupplier;
+import rinde.sim.util.StochasticSuppliers;
 
 import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
@@ -61,30 +65,41 @@ import com.google.common.base.Predicates;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultiset;
-import com.google.common.collect.ImmutableTable;
+import com.google.common.collect.LinkedHashMultimap;
+import com.google.common.collect.Multimap;
 import com.google.common.collect.Multiset;
-import com.google.common.collect.Table;
 import com.google.common.io.Files;
-import com.google.common.primitives.Doubles;
 import com.google.common.primitives.Longs;
 
 public class Generator {
+  // all times are in ms unless otherwise indicated
 
-  enum ExampleProblemClass implements ProblemClass {
-    EXAMPLE;
+  private static final long TICK_SIZE = 1000L;
+  private static final double VEHICLE_SPEED_KMH = 50d;
+  private static final int NUM_VEHICLES = 10;
+  private static final double AREA_WIDTH = 10;
 
-    @Override
-    public String getId() {
-      return name();
-    }
-  }
+  private static final long SCENARIO_HOURS = 12L;
+  private static final long SCENARIO_LENGTH = SCENARIO_HOURS * 60 * 60 * 1000L;
+  private static final int NUM_ORDERS = 360;
+
+  private static final long HALF_DIAG_TT = 509117L;
+  private static final long ONE_AND_HALF_DIAG_TT = 1527351L;
+  private static final long TWO_DIAG_TT = 2036468L;
+
+  private static final long PICKUP_DURATION = 5 * 60 * 1000L;
+  private static final long DELIVERY_DURATION = 5 * 60 * 1000L;
+
+  private static final long INTENSITY_PERIOD = 60 * 60 * 1000L;
+
+  private static final int TARGET_NUM_INSTANCES = 10;
 
   public static void main(String[] args) {
     main2(args);
     final PDPScenario scen;
     try {
       scen = ScenarioIO.read(new File(
-          "files/dataset/h1.000-u50#4.scen"));
+          "files/dataset/0-0.60#0.scen"));
     } catch (final IOException e) {
       throw new IllegalStateException();
     }
@@ -123,120 +138,220 @@ public class Generator {
         .perform();
   }
 
+  static class GeneratorSettings {
+    final TimeSeriesType timeSeriesType;
+    final long urgency;
+    final long dayLength;
+    final long officeHours;
+    final ImmutableMap<String, String> properties;
+
+    GeneratorSettings(TimeSeriesType type, long urg, long dayLen, long officeH,
+        Map<String, String> props) {
+      timeSeriesType = type;
+      urgency = urg;
+      dayLength = dayLen;
+      officeHours = officeH;
+      properties = ImmutableMap.copyOf(props);
+    }
+  }
+
+  enum TimeSeriesType {
+    SINE, HOMOGENOUS, UNIFORM, UNIFORM_MAX;
+  }
+
   public static void main2(String[] args) {
-    // TODO write search procedure for finding scenarios with dynamism
-
     final List<Long> urgencyLevels = Longs.asList(0, 5, 10, 15, 20, 25, 30, 35,
-        40, 45, 50);
+        40, 45);
 
-    // final List<Double> desiredDynamismLevels = Doubles.asList(0, 10, 20, 30,
-    // 40, 50, 60, 70, 80, 90);
-    final List<Double> intensityHeights =
-        Doubles.asList(-.99, -.8, -.5, -.25, 0, .25, .5, .75, 1, 2, 5);
-
-    // for levels of urgency
-    // for levels of dynamism
-
-    final long scenarioHours = 12;
-    final long scenarioLength = scenarioHours * 60 * 60 * 1000L;
-    final long oneAndHalfDiagonalTT = 1527351L;
-    final int totalNumberOfOrders = 360;
-
-    final ImmutableTable.Builder<Long, Double, ScenarioGenerator> tableBuilder = ImmutableTable
+    final ImmutableMap.Builder<GeneratorSettings, ScenarioGenerator> generatorsMap = ImmutableMap
         .builder();
 
     for (final long urg : urgencyLevels) {
       final long urgency = urg * 60 * 1000L;
-      for (int i = 0; i < intensityHeights.size(); i++) {
-        final TimeSeriesGenerator tsg = TimeSeries.nonHomogenousPoisson(
-            scenarioLength - urgency - oneAndHalfDiagonalTT,
-            IntensityFunctions.sineIntensity()
-                .area(totalNumberOfOrders / scenarioHours)
-                .period(60 * 60 * 1000L)
-                .height(intensityHeights.get(i))
-                .build());
-
-        final ProblemClass pc = new SimpleProblemClass(String.format(
-            "h%1.3f-u%d", intensityHeights.get(i), urg));
-
-        tableBuilder.put(urgency, intensityHeights.get(i),
-            createGenerator(pc, scenarioLength, urgency, tsg));
+      // The office hours is the period in which new orders are accepted, it
+      // is defined as [0,officeHoursLength).
+      final long officeHoursLength;
+      if (urgency < HALF_DIAG_TT) {
+        officeHoursLength = SCENARIO_LENGTH - TWO_DIAG_TT - PICKUP_DURATION
+            - DELIVERY_DURATION;
+      } else {
+        officeHoursLength = SCENARIO_LENGTH - urgency - ONE_AND_HALF_DIAG_TT
+            - PICKUP_DURATION - DELIVERY_DURATION;
       }
-      final TimeSeriesGenerator tsg = TimeSeries.homogenousPoisson(
-          scenarioLength - urgency - oneAndHalfDiagonalTT, totalNumberOfOrders);
-      final ProblemClass pc = new SimpleProblemClass(String.format(
-          "h%1.3f-u%d", Double.POSITIVE_INFINITY, urgency));
-      tableBuilder.put(urgency, Double.POSITIVE_INFINITY,
-          createGenerator(pc, scenarioLength, urgency, tsg));
+
+      final double numPeriods = officeHoursLength / (double) INTENSITY_PERIOD;
+
+      final Map<String, String> props = newLinkedHashMap();
+      props.put("expected_num_orders", Integer.toString(NUM_ORDERS));
+      props.put("time_series", "sine Poisson ");
+      props.put("time_series.period", Long.toString(INTENSITY_PERIOD));
+      props.put("time_series.num_periods", Double.toString(numPeriods));
+      props.put("pickup_duration", Long.toString(PICKUP_DURATION));
+      props.put("delivery_duration", Long.toString(DELIVERY_DURATION));
+      props.put("width_height",
+          String.format("%1.1fx%1.1f", AREA_WIDTH, AREA_WIDTH));
+      final GeneratorSettings sineSettings = new GeneratorSettings(
+          TimeSeriesType.SINE, urg, SCENARIO_LENGTH, officeHoursLength, props);
+
+      final TimeSeriesGenerator sineTsg = TimeSeries.nonHomogenousPoisson(
+          officeHoursLength,
+          IntensityFunctions
+              .sineIntensity()
+              .area(NUM_ORDERS / numPeriods)
+              .period(INTENSITY_PERIOD)
+              .height(StochasticSuppliers.uniformDouble(-.99, 5d))
+              .phaseShift(
+                  StochasticSuppliers.uniformDouble(0, INTENSITY_PERIOD))
+              .buildStochasticSupplier());
+
+      props.put("time_series", "homogenous Poisson");
+      props.put("time_series.intensity",
+          Double.toString((double) NUM_ORDERS / (double) officeHoursLength));
+      props.remove("time_series.period");
+      props.remove("time_series.num_periods");
+      final TimeSeriesGenerator homogTsg = TimeSeries.homogenousPoisson(
+          officeHoursLength, NUM_ORDERS);
+      final GeneratorSettings homogSettings = new GeneratorSettings(
+          TimeSeriesType.HOMOGENOUS, urg, SCENARIO_LENGTH, officeHoursLength,
+          props);
+
+      final StochasticSupplier<Double> maxDeviation = StochasticSuppliers
+          .uniformDouble(0, 10 * 60 * 1000);
+      props.put("time_series", "uniform");
+      // props.put("time_series.max_deviation", Long.toString(maxDeviation));
+      props.remove("time_series.intensity");
+      final TimeSeriesGenerator uniformTsg = TimeSeries.uniform(
+          officeHoursLength, NUM_ORDERS, maxDeviation);
+      final GeneratorSettings uniformSettings = new GeneratorSettings(
+          TimeSeriesType.UNIFORM, urg, SCENARIO_LENGTH, officeHoursLength,
+          props);
+
+      final StochasticSupplier<Double> maxDeviation2 = StochasticSuppliers
+          .uniformDouble(30 * 60 * 1000, 120 * 60 * 1000);
+      props.put("time_series", "uniform_max");
+      final TimeSeriesGenerator uniformTsg2 = TimeSeries.uniform(
+          officeHoursLength, NUM_ORDERS, maxDeviation2);
+      final GeneratorSettings uniformSettings2 = new GeneratorSettings(
+          TimeSeriesType.UNIFORM_MAX, urg, SCENARIO_LENGTH, officeHoursLength,
+          props);
+
+      generatorsMap.put(sineSettings,
+          createGenerator(SCENARIO_LENGTH, urgency, sineTsg));
+      // generatorsMap.put(homogSettings,
+      // createGenerator(SCENARIO_LENGTH, urgency, homogTsg));
+      // generatorsMap.put(uniformSettings,
+      // createGenerator(SCENARIO_LENGTH, urgency, uniformTsg));
+      // generatorsMap.put(uniformSettings2,
+      // createGenerator(SCENARIO_LENGTH, urgency, uniformTsg2));
     }
 
-    final ImmutableTable<Long, Double, ScenarioGenerator> scenarioGenerators = tableBuilder
+    final ImmutableMap<GeneratorSettings, ScenarioGenerator> scenarioGenerators = generatorsMap
         .build();
 
     final RandomGenerator rng = new MersenneTwister(123L);
-    for (final Table.Cell<Long, Double, ScenarioGenerator> cell : scenarioGenerators
-        .cellSet()) {
-      final List<PDPScenario> scenarios = newArrayList();
+    for (final Entry<GeneratorSettings, ScenarioGenerator> entry : scenarioGenerators
+        .entrySet()) {
 
-      final SummaryStatistics ss = new SummaryStatistics();
-      while (scenarios.size() < 5) {
-        final String problemClassId = cell.getValue().getProblemClass().getId();
-        final String id = "#" + scenarios.size();
-        final String fileName = "files/dataset/" + problemClassId + id;
-        final PDPScenario scen = cell.getValue().generate(rng, id);
-        Metrics.checkTimeWindowStrictness(scen);
+      final GeneratorSettings generatorSettings = entry.getKey();
+      System.out.println("URGENCY: " + generatorSettings.urgency);
 
-        final StatisticalSummary urgency = Metrics.measureUrgency(scen);
-
-        final long expectedUrgency = cell.getRowKey();
-
-        System.out.println("urgency: " + urgency.getMean() + " "
-            + expectedUrgency);
-
-        if (Math.abs(urgency.getMean() - expectedUrgency) < 0.01
-            && urgency.getStandardDeviation() < 0.01) {
-          System.out.println(" > ACCEPT");
-          // System.out.println(urgency.getMean() + " +- "
-          // + urgency.getStandardDeviation());
-
-          final double dynamism = Metrics.measureDynamism(scen);
-
-          try {
-            Files.createParentDirs(new File(fileName));
-            writePropertiesFile(scen, urgency, dynamism, problemClassId, id,
-                fileName);
-
-            // Analysis.writeLoads(Metrics.measureRelativeLoad(scen), new File(
-            // fileName + ".load"));
-            Analysis.writeLocationList(Metrics.getServicePoints(scen),
-                new File(fileName + ".points"));
-            Analysis.writeTimes(scen.getTimeWindow().end,
-                Metrics.getArrivalTimes(scen), new File(fileName + ".times"));
-
-            ScenarioIO.write(scen, new File(fileName + ".scen"));
-
-          } catch (final IOException e) {
-            throw new IllegalStateException(e);
-          }
-          // System.out.println(dynamism);
-          // ss.addValue(dynamism * 100d);
-          scenarios.add(scen);
-          return;
-        }
-        else {
-          // run(scen);
-        }
+      if (generatorSettings.timeSeriesType == TimeSeriesType.SINE) {
+        createScenarios(rng, generatorSettings, entry.getValue(), 0.0, .51, 6);
+      } else if (generatorSettings.timeSeriesType == TimeSeriesType.HOMOGENOUS) {
+        createScenarios(rng, generatorSettings, entry.getValue(), .59, .61, 1);
+      } else if (generatorSettings.timeSeriesType == TimeSeriesType.UNIFORM) {
+        createScenarios(rng, generatorSettings, entry.getValue(), .59, 1, 5);
+      } else if (generatorSettings.timeSeriesType == TimeSeriesType.UNIFORM_MAX) {
+        createScenarios(rng, generatorSettings, entry.getValue(), .59, .61, 1);
       }
 
-      System.out.println(ss.getMean() + " +- " + ss.getStandardDeviation());
     }
+  }
 
+  static void createScenarios(RandomGenerator rng,
+      GeneratorSettings generatorSettings, ScenarioGenerator generator,
+      double dynLb, double dynUb, int levels) {
+    final List<PDPScenario> scenarios = newArrayList();
+
+    final Multimap<Double, PDPScenario> dynamismScenariosMap = LinkedHashMultimap
+        .create();
+    System.out.println(generatorSettings.timeSeriesType);
+    while (scenarios.size() < levels * TARGET_NUM_INSTANCES) {
+      final PDPScenario scen = generator.generate(rng, "temp");
+      Metrics.checkTimeWindowStrictness(scen);
+      final StatisticalSummary urgency = Metrics.measureUrgency(scen);
+
+      final long expectedUrgency = generatorSettings.urgency * 60000L;
+      if (Math.abs(urgency.getMean() - expectedUrgency) < 0.01
+          && urgency.getStandardDeviation() < 0.01) {
+
+        // System.out.println(urgency.getMean() + " +- "
+        // + urgency.getStandardDeviation());
+
+        final double dynamism = Metrics.measureDynamism(scen,
+            generatorSettings.officeHours);
+        System.out.print(String.format("%1.3f ", dynamism));
+        if ((dynamism % 0.1 < 0.01 || dynamism % 0.1 > 0.09)
+            && dynamism <= dynUb && dynamism >= dynLb) {
+
+          final double targetDyn = Math.round(dynamism * 10d) / 10d;
+
+          final int numInstances = dynamismScenariosMap.get(targetDyn).size();
+
+          if (numInstances < TARGET_NUM_INSTANCES) {
+
+            final String instanceId = "#"
+                + Integer.toString(numInstances);
+            dynamismScenariosMap.put(targetDyn, scen);
+
+            final String problemClassId = String.format("%d-%1.2f",
+                (long) (urgency.getMean() / 60000),
+                targetDyn);
+            System.out.println();
+            System.out.println(" > ACCEPT " + problemClassId);
+            final String fileName = "files/dataset/" + problemClassId
+                + instanceId;
+            try {
+              Files.createParentDirs(new File(fileName));
+              writePropertiesFile(scen, urgency, dynamism, problemClassId,
+                  instanceId, generatorSettings, fileName);
+              Analysis.writeLocationList(Metrics.getServicePoints(scen),
+                  new File(fileName + ".points"));
+              Analysis.writeTimes(scen.getTimeWindow().end,
+                  Metrics.getArrivalTimes(scen),
+                  new File(fileName + ".times"));
+
+              final ProblemClass pc = new SimpleProblemClass(problemClassId);
+              final PDPScenario finalScenario = PDPScenario.builder(pc)
+                  .copyProperties(scen)
+                  .problemClass(pc)
+                  .instanceId(instanceId)
+                  .build();
+
+              ScenarioIO.write(finalScenario, new File(fileName + ".scen"));
+            } catch (final IOException e) {
+              throw new IllegalStateException(e);
+            }
+            // System.out.println(dynamism);
+            // ss.addValue(dynamism * 100d);
+            scenarios.add(scen);
+          }
+          // return;
+        }
+
+      }
+      else {
+        // run(scen);
+      }
+    }
   }
 
   static void writePropertiesFile(PDPScenario scen, StatisticalSummary urgency,
-      double dynamism, String problemClassId, String instanceId, String fileName) {
+      double dynamism, String problemClassId, String instanceId,
+      GeneratorSettings settings, String fileName) {
     final DateTimeFormatter formatter = ISODateTimeFormat
         .dateHourMinuteSecondMillis();
+
     final ImmutableMap.Builder<String, Object> properties = ImmutableMap
         .<String, Object> builder()
         .put("problem_class", problemClassId)
@@ -245,7 +360,12 @@ public class Generator {
         .put("urgency_mean", urgency.getMean())
         .put("urgency_sd", urgency.getStandardDeviation())
         .put("creation_date",
-            formatter.print(System.currentTimeMillis()));
+            formatter.print(System.currentTimeMillis()))
+        .put("creator", System.getProperty("user.name"))
+        .put("day_length", settings.dayLength)
+        .put("office_opening_hours", settings.officeHours);
+
+    properties.putAll(settings.properties);
 
     final ImmutableMultiset<Enum<?>> eventTypes = Metrics
         .getEventTypeCounts(scen);
@@ -264,15 +384,14 @@ public class Generator {
     }
   }
 
-  static ScenarioGenerator createGenerator(ProblemClass pc,
-      long scenarioLength,
+  static ScenarioGenerator createGenerator(long scenarioLength,
       long urgency, TimeSeriesGenerator tsg) {
     return ScenarioGenerator
-        .builder(pc)
+        .builder()
         // global
         .timeUnit(SI.MILLI(SI.SECOND))
         .scenarioLength(scenarioLength)
-        .tickSize(1000L)
+        .tickSize(TICK_SIZE)
         .speedUnit(NonSI.KILOMETERS_PER_HOUR)
         .distanceUnit(SI.KILOMETER)
         .stopCondition(
@@ -284,12 +403,12 @@ public class Generator {
             Parcels
                 .builder()
                 .announceTimes(tsg)
-                .pickupDurations(constant(5 * 60 * 1000L))
-                .deliveryDurations(constant(5 * 60 * 1000L))
+                .pickupDurations(constant(PICKUP_DURATION))
+                .deliveryDurations(constant(DELIVERY_DURATION))
                 .neededCapacities(constant(0))
                 .locations(Locations.builder()
                     .min(0d)
-                    .max(10d)
+                    .max(AREA_WIDTH)
                     .uniform())
                 .timeWindows(TimeWindows.builder()
                     .pickupUrgency(constant(urgency))
@@ -306,8 +425,8 @@ public class Generator {
                 .capacities(constant(1))
                 .centeredStartPositions()
                 .creationTimes(constant(-1L))
-                .numberOfVehicles(constant(10))
-                .speeds(constant(50d))
+                .numberOfVehicles(constant(NUM_VEHICLES))
+                .speeds(constant(VEHICLE_SPEED_KMH))
                 .timeWindowsAsScenario()
                 .build())
 
@@ -315,7 +434,7 @@ public class Generator {
         .depots(Depots.singleCenteredDepot())
 
         // models
-        .addModel(Models.roadModel(50d, true))
+        .addModel(Models.roadModel(VEHICLE_SPEED_KMH, true))
         .addModel(Models.pdpModel(TimeWindowPolicies.TARDY_ALLOWED))
         .build();
   }
