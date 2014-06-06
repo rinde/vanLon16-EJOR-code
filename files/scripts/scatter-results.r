@@ -6,7 +6,7 @@ Central.Solver.CheapestInsertion <- read.csv("~/workspace/dyn-urg/files/results/
 dt1 <- data.table(Central.Solver.CheapestInsertion)
   
 # TRANSFORM VALUES
-dt2 <- dt1[,list(dynamism=round(10*dynamism),
+dt2 <- dt1[,list(dynamism=round(10*dynamism)/10,
                  urgency=urgency_mean/60000,
                  cost )]
 # GROUP
@@ -16,7 +16,6 @@ dt3 <- dt2[,list(cost=mean(cost)),by="dynamism,urgency"]
 scatterplot3d(dt3$dynamism, 
               dt3$urgency, 
               dt3$cost, 
-              angle = 100,
               xlab="dynamism",
               ylab="urgency",
               zlab="average cost",
@@ -37,7 +36,11 @@ s=interp(dt3$dynamism,
          dt3$cost)
 plot3d(dt3$dynamism, 
        dt3$urgency, 
-       dt3$cost)
+       dt3$cost,
+       type='p',
+       xlab="dynamism",
+       ylab="urgency",
+       zlab="average cost")
 
 zlim <- range(s$z)
 zlen <- zlim[2] - zlim[1] + 1
