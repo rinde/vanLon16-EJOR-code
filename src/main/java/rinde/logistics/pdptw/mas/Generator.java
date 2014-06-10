@@ -156,7 +156,7 @@ public class Generator {
   }
 
   enum TimeSeriesType {
-    SINE, HOMOGENOUS, UNIFORM, UNIFORM_MAX;
+    SINE, HOMOGENOUS, UNIFORM;
   }
 
   public static void main2(String[] args) {
@@ -199,7 +199,7 @@ public class Generator {
               .sineIntensity()
               .area(NUM_ORDERS / numPeriods)
               .period(INTENSITY_PERIOD)
-              .height(StochasticSuppliers.uniformDouble(-.99, 5d))
+              .height(StochasticSuppliers.uniformDouble(-.99, 3d))
               .phaseShift(
                   StochasticSuppliers.uniformDouble(0, INTENSITY_PERIOD))
               .buildStochasticSupplier());
@@ -216,7 +216,7 @@ public class Generator {
           props);
 
       final StochasticSupplier<Double> maxDeviation = StochasticSuppliers
-          .uniformDouble(0, 10 * 60 * 1000);
+          .uniformDouble(0, 15 * 60 * 1000);
       props.put("time_series", "uniform");
       // props.put("time_series.max_deviation", Long.toString(maxDeviation));
       props.remove("time_series.intensity");
@@ -226,23 +226,12 @@ public class Generator {
           TimeSeriesType.UNIFORM, urg, SCENARIO_LENGTH, officeHoursLength,
           props);
 
-      final StochasticSupplier<Double> maxDeviation2 = StochasticSuppliers
-          .uniformDouble(30 * 60 * 1000, 120 * 60 * 1000);
-      props.put("time_series", "uniform_max");
-      final TimeSeriesGenerator uniformTsg2 = TimeSeries.uniform(
-          officeHoursLength, NUM_ORDERS, maxDeviation2);
-      final GeneratorSettings uniformSettings2 = new GeneratorSettings(
-          TimeSeriesType.UNIFORM_MAX, urg, SCENARIO_LENGTH, officeHoursLength,
-          props);
-
       generatorsMap.put(sineSettings,
           createGenerator(SCENARIO_LENGTH, urgency, sineTsg));
-      // generatorsMap.put(homogSettings,
-      // createGenerator(SCENARIO_LENGTH, urgency, homogTsg));
-      // generatorsMap.put(uniformSettings,
-      // createGenerator(SCENARIO_LENGTH, urgency, uniformTsg));
-      // generatorsMap.put(uniformSettings2,
-      // createGenerator(SCENARIO_LENGTH, urgency, uniformTsg2));
+      generatorsMap.put(homogSettings,
+          createGenerator(SCENARIO_LENGTH, urgency, homogTsg));
+      generatorsMap.put(uniformSettings,
+          createGenerator(SCENARIO_LENGTH, urgency, uniformTsg));
     }
 
     final ImmutableMap<GeneratorSettings, ScenarioGenerator> scenarioGenerators = generatorsMap
@@ -256,13 +245,11 @@ public class Generator {
       System.out.println("URGENCY: " + generatorSettings.urgency);
 
       if (generatorSettings.timeSeriesType == TimeSeriesType.SINE) {
-        createScenarios(rng, generatorSettings, entry.getValue(), 0.0, .51, 6);
+        createScenarios(rng, generatorSettings, entry.getValue(), .0, .51, 6);
       } else if (generatorSettings.timeSeriesType == TimeSeriesType.HOMOGENOUS) {
         createScenarios(rng, generatorSettings, entry.getValue(), .59, .61, 1);
       } else if (generatorSettings.timeSeriesType == TimeSeriesType.UNIFORM) {
-        createScenarios(rng, generatorSettings, entry.getValue(), .59, 1, 5);
-      } else if (generatorSettings.timeSeriesType == TimeSeriesType.UNIFORM_MAX) {
-        createScenarios(rng, generatorSettings, entry.getValue(), .59, .61, 1);
+        createScenarios(rng, generatorSettings, entry.getValue(), .69, 1, 4);
       }
 
     }
