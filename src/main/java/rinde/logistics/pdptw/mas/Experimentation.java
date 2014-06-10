@@ -30,11 +30,14 @@ import com.google.common.io.Files;
 
 public class Experimentation {
 
+  static final String DATASET = "files/dataset/";
+  static final String RESULTS = "files/results/";
+
   public static void main(String[] args) {
 
     final ObjectiveFunction objFunc = Gendreau06ObjectiveFunction.instance();
 
-    final File[] files = new File("files/dataset/")
+    final File[] files = new File(DATASET)
         .listFiles(new FileFilter() {
           @Override
           public boolean accept(File pathname) {
@@ -51,17 +54,14 @@ public class Experimentation {
     }
 
     final ExperimentResults results = Experiment.build(objFunc)
-        .withThreads(1)
+        .withThreads(24)
         .withRandomSeed(123)
+        .repeat(1)
         .addScenarios(scenarios)
         .addConfiguration(Central.solverConfiguration(
             CheapestInsertionHeuristic.supplier(objFunc),
             "-CheapestInsertion"))
         .perform();
-
-    // urgency
-    // dynamism
-    // value
 
     final Multimap<MASConfiguration, SimulationResult> groupedResults = LinkedHashMultimap
         .create();
@@ -72,14 +72,22 @@ public class Experimentation {
     for (final MASConfiguration config : groupedResults.keySet()) {
       final Collection<SimulationResult> group = groupedResults.get(config);
 
-      final File configResult = new File("files/dataset/" + config.toString()
+      final File configResult = new File(RESULTS + config.toString()
           + ".csv");
       try {
         Files.createParentDirs(configResult);
       } catch (final IOException e1) {
         throw new IllegalStateException(e1);
       }
+      // deletes the file in case it already exists
       configResult.delete();
+      try {
+        Files
+            .append("dynamism,urgency_mean,cost\n", configResult,
+                Charsets.UTF_8);
+      } catch (final IOException e1) {
+        throw new IllegalStateException(e1);
+      }
 
       for (final SimulationResult sr : group) {
         final String pc = sr.scenario.getProblemClass().getId();
@@ -94,11 +102,13 @@ public class Experimentation {
 
           final double dynamism = Double
               .parseDouble(properties.get("dynamism"));
-          final long urgency = Long.parseLong(properties.get("urgency_mean"));
+          final double urgency = Double.parseDouble(properties
+              .get("urgency_mean"));
 
           final double cost = objFunc.computeCost(sr.stats);
 
-          Files.append(Joiner.on(",").join(asList(dynamism, urgency, cost)),
+          Files.append(Joiner.on(",").join(asList(dynamism, urgency, cost))
+              + "\n",
               configResult, Charsets.UTF_8);
 
         } catch (final IOException e) {
