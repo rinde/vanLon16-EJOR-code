@@ -11,8 +11,10 @@ import java.util.List;
 import java.util.Map;
 
 import rinde.logistics.pdptw.solver.CheapestInsertionHeuristic;
+import rinde.logistics.pdptw.solver.Opt2;
 import rinde.sim.pdptw.central.Central;
 import rinde.sim.pdptw.common.ObjectiveFunction;
+import rinde.sim.pdptw.common.StatisticsDTO;
 import rinde.sim.pdptw.experiment.Experiment;
 import rinde.sim.pdptw.experiment.Experiment.ExperimentResults;
 import rinde.sim.pdptw.experiment.Experiment.SimulationResult;
@@ -30,12 +32,14 @@ import com.google.common.io.Files;
 
 public class Experimentation {
 
+  static final ObjectiveFunction SUM = Gendreau06ObjectiveFunction.instance();
+  static final ObjectiveFunction DISTANCE = new DistanceObjectiveFunction();
+  static final ObjectiveFunction TARDINESS = new TardinessObjectiveFunction();
+
   static final String DATASET = "files/dataset/";
   static final String RESULTS = "files/results/";
 
   public static void main(String[] args) {
-
-    final ObjectiveFunction objFunc = Gendreau06ObjectiveFunction.instance();
 
     final File[] files = new File(DATASET)
         .listFiles(new FileFilter() {
@@ -53,14 +57,35 @@ public class Experimentation {
       }
     }
 
-    final ExperimentResults results = Experiment.build(objFunc)
+    final ExperimentResults results = Experiment
+        .build(SUM)
         .withThreads(24)
         .withRandomSeed(123)
         .repeat(1)
         .addScenarios(scenarios)
         .addConfiguration(Central.solverConfiguration(
-            CheapestInsertionHeuristic.supplier(objFunc),
-            "-CheapestInsertion"))
+            CheapestInsertionHeuristic.supplier(SUM),
+            "-CheapInsert"))
+        .addConfiguration(Central.solverConfiguration(
+            CheapestInsertionHeuristic.supplier(TARDINESS),
+            "-CheapInsert-Tard"))
+        .addConfiguration(Central.solverConfiguration(
+            CheapestInsertionHeuristic.supplier(DISTANCE),
+            "-CheapInsert-Dist"))
+        .addConfiguration(Central.solverConfiguration(
+            Opt2.supplier(CheapestInsertionHeuristic.supplier(SUM), SUM),
+            "-Opt2-CheapInsert"))
+        .addConfiguration(
+            Central.solverConfiguration(
+                Opt2.supplier(CheapestInsertionHeuristic.supplier(TARDINESS),
+                    TARDINESS),
+                "-Opt2-CheapInsert-Tard"))
+        .addConfiguration(
+            Central.solverConfiguration(
+                Opt2.supplier(CheapestInsertionHeuristic.supplier(DISTANCE),
+                    DISTANCE),
+                "-Opt2-CheapInsert-Dist"))
+
         .perform();
 
     final Multimap<MASConfiguration, SimulationResult> groupedResults = LinkedHashMultimap
@@ -105,7 +130,7 @@ public class Experimentation {
           final double urgency = Double.parseDouble(properties
               .get("urgency_mean"));
 
-          final double cost = objFunc.computeCost(sr.stats);
+          final double cost = SUM.computeCost(sr.stats);
 
           Files.append(Joiner.on(",").join(asList(dynamism, urgency, cost))
               + "\n",
@@ -116,6 +141,41 @@ public class Experimentation {
         }
       }
 
+    }
+  }
+
+  static class DistanceObjectiveFunction implements ObjectiveFunction {
+    @Override
+    public boolean isValidResult(StatisticsDTO stats) {
+      return Gendreau06ObjectiveFunction.instance().isValidResult(stats);
+    }
+
+    @Override
+    public double computeCost(StatisticsDTO stats) {
+      return stats.totalDistance;
+    }
+
+    @Override
+    public String printHumanReadableFormat(StatisticsDTO stats) {
+      return String.format("Distance %1.3f.", stats.totalDistance);
+    }
+  }
+
+  static class TardinessObjectiveFunction implements ObjectiveFunction {
+    @Override
+    public boolean isValidResult(StatisticsDTO stats) {
+      return Gendreau06ObjectiveFunction.instance().isValidResult(stats);
+    }
+
+    @Override
+    public double computeCost(StatisticsDTO stats) {
+      return stats.pickupTardiness + stats.deliveryTardiness;
+    }
+
+    @Override
+    public String printHumanReadableFormat(StatisticsDTO stats) {
+      return String.format("Tardiness %1.3f.", stats.pickupTardiness
+          + stats.deliveryTardiness);
     }
   }
 }
