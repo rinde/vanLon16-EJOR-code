@@ -94,6 +94,10 @@ public class Generator {
 
   private static final int TARGET_NUM_INSTANCES = 10;
 
+  // These parameters influence the dynamism selection settings
+  private static final double DYN_STEP_SIZE = 0.05;
+  private static final double DYN_BANDWIDTH = 0.01;
+
   public static void main(String[] args) {
     main2(args);
     final PDPScenario scen;
@@ -245,11 +249,11 @@ public class Generator {
       System.out.println("URGENCY: " + generatorSettings.urgency);
 
       if (generatorSettings.timeSeriesType == TimeSeriesType.SINE) {
-        createScenarios(rng, generatorSettings, entry.getValue(), .0, .51, 6);
+        createScenarios(rng, generatorSettings, entry.getValue(), .0, .51, 11);
       } else if (generatorSettings.timeSeriesType == TimeSeriesType.HOMOGENOUS) {
-        createScenarios(rng, generatorSettings, entry.getValue(), .59, .61, 1);
+        createScenarios(rng, generatorSettings, entry.getValue(), .54, .61, 2);
       } else if (generatorSettings.timeSeriesType == TimeSeriesType.UNIFORM) {
-        createScenarios(rng, generatorSettings, entry.getValue(), .69, 1, 4);
+        createScenarios(rng, generatorSettings, entry.getValue(), .64, 1, 8);
       }
 
     }
@@ -278,10 +282,14 @@ public class Generator {
         final double dynamism = Metrics.measureDynamism(scen,
             generatorSettings.officeHours);
         System.out.print(String.format("%1.3f ", dynamism));
-        if ((dynamism % 0.1 < 0.01 || dynamism % 0.1 > 0.09)
+        if ((dynamism % DYN_STEP_SIZE < DYN_BANDWIDTH || dynamism
+            % DYN_STEP_SIZE > DYN_STEP_SIZE - DYN_BANDWIDTH)
             && dynamism <= dynUb && dynamism >= dynLb) {
 
-          final double targetDyn = Math.round(dynamism * 10d) / 10d;
+          final double targetDyn = Math.round(dynamism / DYN_STEP_SIZE)
+              * DYN_STEP_SIZE;// Math.round(dynamism
+          // * 100d) /
+          // 100d;
 
           final int numInstances = dynamismScenariosMap.get(targetDyn).size();
 
