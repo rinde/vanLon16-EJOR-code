@@ -20,37 +20,49 @@ import com.google.common.io.Files;
 
 public class PoissonDynamismExperiment {
   private static final double LENGTH_OF_DAY = 12 * 60 * 60 * 1000;
+  private static final int NUM_EVENTS = 360;
+  private static final int REPETITIONS = 10000;
 
   public static void main(String[] args) {
 
     final RandomGenerator rng = new MersenneTwister(123L);
-    final TimeSeriesGenerator generator = TimeSeries.homogenousPoisson(
-        LENGTH_OF_DAY, 360);
+    final TimeSeriesGenerator poissonGenerator = TimeSeries.homogenousPoisson(
+        LENGTH_OF_DAY, NUM_EVENTS);
 
+    final TimeSeriesGenerator uniformGenerator = TimeSeries.uniform(
+        LENGTH_OF_DAY, NUM_EVENTS, 30 * 60 * 1000);
+
+    createDynamismHistogram(poissonGenerator, rng.nextLong(), new File(
+        "files/results/poisson-dynamism.csv"), REPETITIONS);
+
+    createDynamismHistogram(uniformGenerator, rng.nextLong(), new File(
+        "files/results/uniform-dynamism.csv"), REPETITIONS);
+
+  }
+
+  static void createDynamismHistogram(TimeSeriesGenerator generator, long seed,
+      File file, int repetitions) {
+    final RandomGenerator rng = new MersenneTwister(seed);
     final List<Double> values = newArrayList();
-    for (int i = 0; i < 10000; i++) {
+    for (int i = 0; i < repetitions; i++) {
       final List<Double> times = generator.generate(rng.nextLong());
       final double dynamism = Metrics.measureDynamism(times, LENGTH_OF_DAY);
       values.add(dynamism);
     }
     final Multiset<Double> hist = Metrics.computeHistogram(values, 0.01);
     final StringBuilder sb = new StringBuilder();
-
     for (final Entry<Double> entry : hist.entrySet()) {
-      sb.append(entry.getElement())
+      sb.append(String.format("%1.2f", entry.getElement()))
           .append(",")
           .append(entry.getCount())
           .append(System.lineSeparator());
     }
 
     try {
-      Files.write(sb.toString(),
-          new File("files/results/poisson-dynamism.csv"),
-          Charsets.UTF_8);
+      Files.write(sb.toString(), file, Charsets.UTF_8);
     } catch (final IOException e) {
       throw new IllegalStateException(e);
     }
-
   }
 
 }
