@@ -92,7 +92,7 @@ public class Generator {
 
   private static final long INTENSITY_PERIOD = 60 * 60 * 1000L;
 
-  private static final int TARGET_NUM_INSTANCES = 10;
+  private static final int TARGET_NUM_INSTANCES = 100;
 
   // These parameters influence the dynamism selection settings
   private static final double DYN_STEP_SIZE = 0.05;
@@ -160,7 +160,7 @@ public class Generator {
   }
 
   enum TimeSeriesType {
-    SINE, HOMOGENOUS, UNIFORM;
+    SINE, HOMOGENOUS, NORMAL, UNIFORM;
   }
 
   public static void main2(String[] args) {
@@ -197,6 +197,7 @@ public class Generator {
       final GeneratorSettings sineSettings = new GeneratorSettings(
           TimeSeriesType.SINE, urg, SCENARIO_LENGTH, officeHoursLength, props);
 
+      // NON-HOMOGENOUS
       final TimeSeriesGenerator sineTsg = TimeSeries.nonHomogenousPoisson(
           officeHoursLength,
           IntensityFunctions
@@ -208,6 +209,7 @@ public class Generator {
                   StochasticSuppliers.uniformDouble(0, INTENSITY_PERIOD))
               .buildStochasticSupplier());
 
+      // HOMOGENOUS
       props.put("time_series", "homogenous Poisson");
       props.put("time_series.intensity",
           Double.toString((double) NUM_ORDERS / (double) officeHoursLength));
@@ -219,11 +221,24 @@ public class Generator {
           TimeSeriesType.HOMOGENOUS, urg, SCENARIO_LENGTH, officeHoursLength,
           props);
 
-      final StochasticSupplier<Double> maxDeviation = StochasticSuppliers
-          .uniformDouble(0, 15 * 60 * 1000);
-      props.put("time_series", "uniform");
-      // props.put("time_series.max_deviation", Long.toString(maxDeviation));
+      // NORMAL
+      props.put("time_series", "normal");
       props.remove("time_series.intensity");
+      final TimeSeriesGenerator normalTsg = TimeSeries.normal(
+          officeHoursLength, NUM_ORDERS, 10 * 60 * 1000);
+      final GeneratorSettings normalSettings = new GeneratorSettings(
+          TimeSeriesType.NORMAL, urg, SCENARIO_LENGTH, officeHoursLength,
+          props);
+
+      // UNIFORM
+      props.put("time_series", "uniform");
+      final StochasticSupplier<Double> maxDeviation = StochasticSuppliers
+          .normal()
+          .mean(1 * 60 * 1000)
+          .std(1 * 60 * 1000)
+          .lowerBound(0)
+          .upperBound(15d * 60 * 1000)
+          .buildDouble();
       final TimeSeriesGenerator uniformTsg = TimeSeries.uniform(
           officeHoursLength, NUM_ORDERS, maxDeviation);
       final GeneratorSettings uniformSettings = new GeneratorSettings(
@@ -234,6 +249,8 @@ public class Generator {
           createGenerator(SCENARIO_LENGTH, urgency, sineTsg));
       generatorsMap.put(homogSettings,
           createGenerator(SCENARIO_LENGTH, urgency, homogTsg));
+      generatorsMap.put(normalSettings,
+          createGenerator(SCENARIO_LENGTH, urgency, normalTsg));
       generatorsMap.put(uniformSettings,
           createGenerator(SCENARIO_LENGTH, urgency, uniformTsg));
     }
@@ -249,11 +266,13 @@ public class Generator {
       System.out.println("URGENCY: " + generatorSettings.urgency);
 
       if (generatorSettings.timeSeriesType == TimeSeriesType.SINE) {
-        createScenarios(rng, generatorSettings, entry.getValue(), .0, .51, 11);
+        createScenarios(rng, generatorSettings, entry.getValue(), .0, .46, 10);
       } else if (generatorSettings.timeSeriesType == TimeSeriesType.HOMOGENOUS) {
-        createScenarios(rng, generatorSettings, entry.getValue(), .54, .61, 2);
+        createScenarios(rng, generatorSettings, entry.getValue(), .49, .56, 2);
+      } else if (generatorSettings.timeSeriesType == TimeSeriesType.NORMAL) {
+        createScenarios(rng, generatorSettings, entry.getValue(), .59, .66, 2);
       } else if (generatorSettings.timeSeriesType == TimeSeriesType.UNIFORM) {
-        createScenarios(rng, generatorSettings, entry.getValue(), .64, 1, 8);
+        createScenarios(rng, generatorSettings, entry.getValue(), .69, 1, 7);
       }
 
     }
