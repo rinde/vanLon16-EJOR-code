@@ -9,39 +9,74 @@ import java.util.List;
 import org.apache.commons.math3.random.MersenneTwister;
 import org.apache.commons.math3.random.RandomGenerator;
 
+import rinde.sim.pdptw.scenario.IntensityFunctions;
 import rinde.sim.pdptw.scenario.Metrics;
 import rinde.sim.pdptw.scenario.TimeSeries;
 import rinde.sim.pdptw.scenario.TimeSeries.TimeSeriesGenerator;
+import rinde.sim.util.StochasticSupplier;
+import rinde.sim.util.StochasticSuppliers;
 
 import com.google.common.base.Charsets;
-import com.google.common.collect.Multiset;
-import com.google.common.collect.Multiset.Entry;
+import com.google.common.base.Joiner;
 import com.google.common.io.Files;
 
 public class PoissonDynamismExperiment {
   private static final double LENGTH_OF_DAY = 12 * 60 * 60 * 1000;
   private static final int NUM_EVENTS = 360;
   private static final int REPETITIONS = 10000;
+  private static final long INTENSITY_PERIOD = 60 * 60 * 1000L;
+
+  private static final String FOLDER = "files/results/time-series-dynamism-experiment/";
 
   public static void main(String[] args) {
-
     final RandomGenerator rng = new MersenneTwister(123L);
-    final TimeSeriesGenerator poissonGenerator = TimeSeries.homogenousPoisson(
-        LENGTH_OF_DAY, NUM_EVENTS);
+    final TimeSeriesGenerator nonHomogPoissonGenerator = TimeSeries
+        .nonHomogenousPoisson(LENGTH_OF_DAY, IntensityFunctions
+            .sineIntensity()
+            .area(NUM_EVENTS / (LENGTH_OF_DAY / INTENSITY_PERIOD))
+            .period(INTENSITY_PERIOD)
+            .height(StochasticSuppliers.uniformDouble(-.99, 1.5d))
+            .phaseShift(
+                StochasticSuppliers.uniformDouble(0, INTENSITY_PERIOD))
+            .buildStochasticSupplier());
 
+    final TimeSeriesGenerator homogPoissonGenerator = TimeSeries
+        .homogenousPoisson(LENGTH_OF_DAY, NUM_EVENTS);
+
+    final TimeSeriesGenerator normalGenerator = TimeSeries.normal(
+        LENGTH_OF_DAY, NUM_EVENTS, 10 * 60 * 1000);
+
+    final StochasticSupplier<Double> maxDeviation = StochasticSuppliers
+        .normal()
+        .mean(1 * 60 * 1000)
+        .std(1 * 60 * 1000)
+        .lowerBound(0)
+        .upperBound(15d * 60 * 1000)
+        .buildDouble();
     final TimeSeriesGenerator uniformGenerator = TimeSeries.uniform(
-        LENGTH_OF_DAY, NUM_EVENTS, 30 * 60 * 1000);
+        LENGTH_OF_DAY, NUM_EVENTS, maxDeviation);
 
-    createDynamismHistogram(poissonGenerator, rng.nextLong(), new File(
-        "files/results/poisson-dynamism.csv"), REPETITIONS);
+    createDynamismHistogram(nonHomogPoissonGenerator, rng.nextLong(), new File(
+        FOLDER + "non-homog-poisson-dynamism.csv"), REPETITIONS);
+
+    createDynamismHistogram(homogPoissonGenerator, rng.nextLong(), new File(
+        FOLDER + "homog-poisson-dynamism.csv"), REPETITIONS);
+
+    createDynamismHistogram(normalGenerator, rng.nextLong(), new File(
+        FOLDER + "normal-dynamism.csv"), REPETITIONS);
 
     createDynamismHistogram(uniformGenerator, rng.nextLong(), new File(
-        "files/results/uniform-dynamism.csv"), REPETITIONS);
+        FOLDER + "uniform-dynamism.csv"), REPETITIONS);
 
   }
 
   static void createDynamismHistogram(TimeSeriesGenerator generator, long seed,
       File file, int repetitions) {
+    try {
+      Files.createParentDirs(file);
+    } catch (final IOException e1) {
+      throw new IllegalStateException(e1);
+    }
     final RandomGenerator rng = new MersenneTwister(seed);
     final List<Double> values = newArrayList();
     for (int i = 0; i < repetitions; i++) {
@@ -49,20 +84,12 @@ public class PoissonDynamismExperiment {
       final double dynamism = Metrics.measureDynamism(times, LENGTH_OF_DAY);
       values.add(dynamism);
     }
-    final Multiset<Double> hist = Metrics.computeHistogram(values, 0.01);
     final StringBuilder sb = new StringBuilder();
-    for (final Entry<Double> entry : hist.entrySet()) {
-      sb.append(String.format("%1.2f", entry.getElement()))
-          .append(",")
-          .append(entry.getCount())
-          .append(System.lineSeparator());
-    }
-
+    sb.append(Joiner.on("\n").join(values));
     try {
       Files.write(sb.toString(), file, Charsets.UTF_8);
     } catch (final IOException e) {
       throw new IllegalStateException(e);
     }
   }
-
 }
