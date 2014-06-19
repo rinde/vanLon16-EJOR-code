@@ -8,6 +8,7 @@ import java.util.List;
 
 import org.apache.commons.math3.random.MersenneTwister;
 import org.apache.commons.math3.random.RandomGenerator;
+import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 
 import rinde.sim.pdptw.scenario.IntensityFunctions;
 import rinde.sim.pdptw.scenario.Metrics;
@@ -23,7 +24,7 @@ import com.google.common.io.Files;
 public class PoissonDynamismExperiment {
   private static final double LENGTH_OF_DAY = 12 * 60 * 60 * 1000;
   private static final int NUM_EVENTS = 360;
-  private static final int REPETITIONS = 10000;
+  private static final int REPETITIONS = 1000;
   private static final long INTENSITY_PERIOD = 60 * 60 * 1000L;
 
   private static final String FOLDER = "files/results/time-series-dynamism-experiment/";
@@ -44,7 +45,7 @@ public class PoissonDynamismExperiment {
         .homogenousPoisson(LENGTH_OF_DAY, NUM_EVENTS);
 
     final TimeSeriesGenerator normalGenerator = TimeSeries.normal(
-        LENGTH_OF_DAY, NUM_EVENTS, 10 * 60 * 1000);
+        LENGTH_OF_DAY, NUM_EVENTS, 2.4 * 60 * 1000);
 
     final StochasticSupplier<Double> maxDeviation = StochasticSuppliers
         .normal()
@@ -79,11 +80,16 @@ public class PoissonDynamismExperiment {
     }
     final RandomGenerator rng = new MersenneTwister(seed);
     final List<Double> values = newArrayList();
+    final SummaryStatistics ss = new SummaryStatistics();
     for (int i = 0; i < repetitions; i++) {
       final List<Double> times = generator.generate(rng.nextLong());
+      ss.addValue(times.size());
       final double dynamism = Metrics.measureDynamism(times, LENGTH_OF_DAY);
       values.add(dynamism);
     }
+    System.out.println(file.getName() + " has #events: mean: " + ss.getMean()
+        + " +- " + ss.getStandardDeviation());
+
     final StringBuilder sb = new StringBuilder();
     sb.append(Joiner.on("\n").join(values));
     try {

@@ -92,7 +92,7 @@ public class Generator {
 
   private static final long INTENSITY_PERIOD = 60 * 60 * 1000L;
 
-  private static final int TARGET_NUM_INSTANCES = 100;
+  private static final int TARGET_NUM_INSTANCES = 10;
 
   // These parameters influence the dynamism selection settings
   private static final double DYN_STEP_SIZE = 0.05;
@@ -103,11 +103,11 @@ public class Generator {
     final PDPScenario scen;
     try {
       scen = ScenarioIO.read(new File(
-          "files/dataset/0-0.60#0.scen"));
+          "files/dataset/30-0.60#0.scen"));
     } catch (final IOException e) {
       throw new IllegalStateException();
     }
-    run(scen);
+    // run(scen);
 
   }
 
@@ -225,7 +225,7 @@ public class Generator {
       props.put("time_series", "normal");
       props.remove("time_series.intensity");
       final TimeSeriesGenerator normalTsg = TimeSeries.normal(
-          officeHoursLength, NUM_ORDERS, 10 * 60 * 1000);
+          officeHoursLength, NUM_ORDERS, 2.4 * 60 * 1000);
       final GeneratorSettings normalSettings = new GeneratorSettings(
           TimeSeriesType.NORMAL, urg, SCENARIO_LENGTH, officeHoursLength,
           props);
