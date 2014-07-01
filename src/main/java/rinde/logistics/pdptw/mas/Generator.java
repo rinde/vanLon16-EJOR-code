@@ -1,11 +1,13 @@
 package rinde.logistics.pdptw.mas;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.Lists.newArrayList;
 import static com.google.common.collect.Maps.newLinkedHashMap;
 import static rinde.sim.util.StochasticSuppliers.constant;
 
 import java.io.File;
 import java.io.IOException;
+import java.math.RoundingMode;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -25,12 +27,15 @@ import rinde.logistics.pdptw.mas.comm.SolverBidder;
 import rinde.logistics.pdptw.mas.route.SolverRoutePlanner;
 import rinde.logistics.pdptw.solver.CheapestInsertionHeuristic;
 import rinde.sim.core.Simulator;
+import rinde.sim.core.graph.Point;
 import rinde.sim.core.model.pdp.Depot;
+import rinde.sim.core.model.pdp.PDPScenarioEvent;
 import rinde.sim.core.model.pdp.Parcel;
 import rinde.sim.core.model.pdp.TimeWindowPolicy.TimeWindowPolicies;
 import rinde.sim.core.model.pdp.Vehicle;
 import rinde.sim.pdptw.common.DynamicPDPTWProblem.StopConditions;
 import rinde.sim.pdptw.common.ObjectiveFunction;
+import rinde.sim.pdptw.common.ParcelDTO.Builder;
 import rinde.sim.pdptw.common.TimeLinePanel;
 import rinde.sim.pdptw.experiment.Experiment;
 import rinde.sim.pdptw.gendreau06.Gendreau06ObjectiveFunction;
@@ -45,10 +50,11 @@ import rinde.sim.pdptw.scenario.PDPScenario.ProblemClass;
 import rinde.sim.pdptw.scenario.PDPScenario.SimpleProblemClass;
 import rinde.sim.pdptw.scenario.Parcels;
 import rinde.sim.pdptw.scenario.ScenarioGenerator;
+import rinde.sim.pdptw.scenario.ScenarioGenerator.TravelTimes;
 import rinde.sim.pdptw.scenario.ScenarioIO;
 import rinde.sim.pdptw.scenario.TimeSeries;
 import rinde.sim.pdptw.scenario.TimeSeries.TimeSeriesGenerator;
-import rinde.sim.pdptw.scenario.TimeWindows;
+import rinde.sim.pdptw.scenario.TimeWindows.TimeWindowGenerator;
 import rinde.sim.pdptw.scenario.Vehicles;
 import rinde.sim.scenario.ScenarioController.UICreator;
 import rinde.sim.ui.View;
@@ -58,6 +64,7 @@ import rinde.sim.ui.renderers.RoadUserRenderer;
 import rinde.sim.ui.renderers.UiSchema;
 import rinde.sim.util.StochasticSupplier;
 import rinde.sim.util.StochasticSuppliers;
+import rinde.sim.util.TimeWindow;
 
 import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
@@ -69,6 +76,7 @@ import com.google.common.collect.LinkedHashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multiset;
 import com.google.common.io.Files;
+import com.google.common.math.DoubleMath;
 import com.google.common.primitives.Longs;
 
 public class Generator {
@@ -99,19 +107,18 @@ public class Generator {
   private static final double DYN_BANDWIDTH = 0.01;
 
   public static void main(String[] args) {
-    main2(args);
+    // main2(args);
     final PDPScenario scen;
+    final String fileName = "files/dataset/30-0.00#2.scen";
     try {
-      scen = ScenarioIO.read(new File(
-          "files/dataset/30-0.60#0.scen"));
+      scen = ScenarioIO.read(new File(fileName));
     } catch (final IOException e) {
-      throw new IllegalStateException();
+      throw new IllegalStateException(e);
     }
-    // run(scen);
-
+    run(scen, fileName);
   }
 
-  public static void run(PDPScenario s) {
+  public static void run(PDPScenario s, final String fileName) {
     final ObjectiveFunction objFunc = Gendreau06ObjectiveFunction.instance();
     Experiment
         .build(Gendreau06ObjectiveFunction.instance())
@@ -136,6 +143,7 @@ public class Generator {
                 .with(new RoadUserRenderer(schema, false))
                 .with(new PDPModelRenderer())
                 .with(new TimeLinePanel())
+                .setTitleAppendix(fileName)
                 .show();
           }
         })
@@ -171,6 +179,7 @@ public class Generator {
         .builder();
 
     for (final long urg : urgencyLevels) {
+      System.out.print("create " + urg);
       final long urgency = urg * 60 * 1000L;
       // The office hours is the period in which new orders are accepted, it
       // is defined as [0,officeHoursLength).
@@ -197,6 +206,7 @@ public class Generator {
       final GeneratorSettings sineSettings = new GeneratorSettings(
           TimeSeriesType.SINE, urg, SCENARIO_LENGTH, officeHoursLength, props);
 
+      System.out.print(" non-homogenous Poisson");
       // NON-HOMOGENOUS
       final TimeSeriesGenerator sineTsg = TimeSeries.nonHomogenousPoisson(
           officeHoursLength,
@@ -209,6 +219,7 @@ public class Generator {
                   StochasticSuppliers.uniformDouble(0, INTENSITY_PERIOD))
               .buildStochasticSupplier());
 
+      System.out.print(" homogenous Poisson");
       // HOMOGENOUS
       props.put("time_series", "homogenous Poisson");
       props.put("time_series.intensity",
@@ -221,6 +232,7 @@ public class Generator {
           TimeSeriesType.HOMOGENOUS, urg, SCENARIO_LENGTH, officeHoursLength,
           props);
 
+      System.out.print(" normal");
       // NORMAL
       props.put("time_series", "normal");
       props.remove("time_series.intensity");
@@ -230,6 +242,7 @@ public class Generator {
           TimeSeriesType.NORMAL, urg, SCENARIO_LENGTH, officeHoursLength,
           props);
 
+      System.out.print(" uniform");
       // UNIFORM
       props.put("time_series", "uniform");
       final StochasticSupplier<Double> maxDeviation = StochasticSuppliers
@@ -244,6 +257,7 @@ public class Generator {
       final GeneratorSettings uniformSettings = new GeneratorSettings(
           TimeSeriesType.UNIFORM, urg, SCENARIO_LENGTH, officeHoursLength,
           props);
+      System.out.println(".");
 
       generatorsMap.put(sineSettings,
           createGenerator(SCENARIO_LENGTH, urgency, sineTsg));
@@ -258,12 +272,14 @@ public class Generator {
     final ImmutableMap<GeneratorSettings, ScenarioGenerator> scenarioGenerators = generatorsMap
         .build();
 
+    System.out.println("num generators: " + scenarioGenerators.size());
     final RandomGenerator rng = new MersenneTwister(123L);
     for (final Entry<GeneratorSettings, ScenarioGenerator> entry : scenarioGenerators
         .entrySet()) {
 
       final GeneratorSettings generatorSettings = entry.getKey();
-      System.out.println("URGENCY: " + generatorSettings.urgency);
+      System.out.println("URGENCY: " + generatorSettings.urgency + " "
+          + generatorSettings.timeSeriesType);
 
       if (generatorSettings.timeSeriesType == TimeSeriesType.SINE) {
         createScenarios(rng, generatorSettings, entry.getValue(), .0, .46, 10);
@@ -273,9 +289,11 @@ public class Generator {
         createScenarios(rng, generatorSettings, entry.getValue(), .59, .66, 2);
       } else if (generatorSettings.timeSeriesType == TimeSeriesType.UNIFORM) {
         createScenarios(rng, generatorSettings, entry.getValue(), .69, 1, 7);
+      } else {
+        throw new IllegalArgumentException();
       }
-
     }
+    System.out.println("DONE.");
   }
 
   static void createScenarios(RandomGenerator rng,
@@ -285,7 +303,6 @@ public class Generator {
 
     final Multimap<Double, PDPScenario> dynamismScenariosMap = LinkedHashMultimap
         .create();
-    System.out.println(generatorSettings.timeSeriesType);
     while (scenarios.size() < levels * TARGET_NUM_INSTANCES) {
       final PDPScenario scen = generator.generate(rng, "temp");
       Metrics.checkTimeWindowStrictness(scen);
@@ -295,67 +312,61 @@ public class Generator {
       if (Math.abs(urgency.getMean() - expectedUrgency) < 0.01
           && urgency.getStandardDeviation() < 0.01) {
 
-        // System.out.println(urgency.getMean() + " +- "
-        // + urgency.getStandardDeviation());
+        final int numParcels = Metrics.getEventTypeCounts(scen).count(
+            PDPScenarioEvent.ADD_PARCEL);
+        if (numParcels == NUM_ORDERS) {
 
-        final double dynamism = Metrics.measureDynamism(scen,
-            generatorSettings.officeHours);
-        System.out.print(String.format("%1.3f ", dynamism));
-        if ((dynamism % DYN_STEP_SIZE < DYN_BANDWIDTH || dynamism
-            % DYN_STEP_SIZE > DYN_STEP_SIZE - DYN_BANDWIDTH)
-            && dynamism <= dynUb && dynamism >= dynLb) {
+          final double dynamism = Metrics.measureDynamism(scen,
+              generatorSettings.officeHours);
+          System.out.print(String.format("%1.3f ", dynamism));
+          if ((dynamism % DYN_STEP_SIZE < DYN_BANDWIDTH || dynamism
+              % DYN_STEP_SIZE > DYN_STEP_SIZE - DYN_BANDWIDTH)
+              && dynamism <= dynUb && dynamism >= dynLb) {
 
-          final double targetDyn = Math.round(dynamism / DYN_STEP_SIZE)
-              * DYN_STEP_SIZE;// Math.round(dynamism
-          // * 100d) /
-          // 100d;
+            final double targetDyn = Math.round(dynamism / DYN_STEP_SIZE)
+                * DYN_STEP_SIZE;
 
-          final int numInstances = dynamismScenariosMap.get(targetDyn).size();
+            final int numInstances = dynamismScenariosMap.get(targetDyn).size();
 
-          if (numInstances < TARGET_NUM_INSTANCES) {
+            if (numInstances < TARGET_NUM_INSTANCES) {
 
-            final String instanceId = "#"
-                + Integer.toString(numInstances);
-            dynamismScenariosMap.put(targetDyn, scen);
+              final String instanceId = "#"
+                  + Integer.toString(numInstances);
+              dynamismScenariosMap.put(targetDyn, scen);
 
-            final String problemClassId = String.format("%d-%1.2f",
-                (long) (urgency.getMean() / 60000),
-                targetDyn);
-            System.out.println();
-            System.out.println(" > ACCEPT " + problemClassId);
-            final String fileName = "files/dataset/" + problemClassId
-                + instanceId;
-            try {
-              Files.createParentDirs(new File(fileName));
-              writePropertiesFile(scen, urgency, dynamism, problemClassId,
-                  instanceId, generatorSettings, fileName);
-              Analysis.writeLocationList(Metrics.getServicePoints(scen),
-                  new File(fileName + ".points"));
-              Analysis.writeTimes(scen.getTimeWindow().end,
-                  Metrics.getArrivalTimes(scen),
-                  new File(fileName + ".times"));
+              final String problemClassId = String.format("%d-%1.2f",
+                  (long) (urgency.getMean() / 60000),
+                  targetDyn);
+              System.out.println();
+              System.out.println(" > ACCEPT " + problemClassId);
+              final String fileName = "files/dataset/" + problemClassId
+                  + instanceId;
+              try {
+                Files.createParentDirs(new File(fileName));
+                writePropertiesFile(scen, urgency, dynamism, problemClassId,
+                    instanceId, generatorSettings, fileName);
+                Analysis.writeLocationList(Metrics.getServicePoints(scen),
+                    new File(fileName + ".points"));
+                Analysis.writeTimes(scen.getTimeWindow().end,
+                    Metrics.getArrivalTimes(scen),
+                    new File(fileName + ".times"));
 
-              final ProblemClass pc = new SimpleProblemClass(problemClassId);
-              final PDPScenario finalScenario = PDPScenario.builder(pc)
-                  .copyProperties(scen)
-                  .problemClass(pc)
-                  .instanceId(instanceId)
-                  .build();
+                final ProblemClass pc = new SimpleProblemClass(problemClassId);
+                final PDPScenario finalScenario = PDPScenario.builder(pc)
+                    .copyProperties(scen)
+                    .problemClass(pc)
+                    .instanceId(instanceId)
+                    .build();
 
-              ScenarioIO.write(finalScenario, new File(fileName + ".scen"));
-            } catch (final IOException e) {
-              throw new IllegalStateException(e);
+                ScenarioIO.write(finalScenario, new File(fileName + ".scen"));
+              } catch (final IOException e) {
+                throw new IllegalStateException(e);
+              }
+              scenarios.add(scen);
             }
-            // System.out.println(dynamism);
-            // ss.addValue(dynamism * 100d);
-            scenarios.add(scen);
           }
-          // return;
-        }
 
-      }
-      else {
-        // run(scen);
+        }
       }
     }
   }
@@ -416,7 +427,8 @@ public class Generator {
         .parcels(
             Parcels
                 .builder()
-                .announceTimes(tsg)
+                .announceTimes(
+                    TimeSeries.filter(tsg, TimeSeries.numEvents(NUM_ORDERS)))
                 .pickupDurations(constant(PICKUP_DURATION))
                 .deliveryDurations(constant(DELIVERY_DURATION))
                 .neededCapacities(constant(0))
@@ -424,13 +436,16 @@ public class Generator {
                     .min(0d)
                     .max(AREA_WIDTH)
                     .uniform())
-                .timeWindows(TimeWindows.builder()
-                    .pickupUrgency(constant(urgency))
-                    .pickupTimeWindowLength(constant(5 * 60 * 1000L))
-                    .deliveryOpening(constant(0L))
-                    .minDeliveryLength(constant(10 * 60 * 1000L))
-                    .deliveryLengthFactor(constant(3d))
-                    .build())
+                .timeWindows(new CustomTimeWindowGenerator(urgency)
+                // TimeWindows.builder()
+                // .pickupUrgency(constant(urgency))
+                // // .pickupTimeWindowLength(StochasticSuppliers.uniformLong(5
+                // // * 60 * 1000L,))
+                // .deliveryOpening(constant(0L))
+                // .minDeliveryLength(constant(10 * 60 * 1000L))
+                // .deliveryLengthFactor(constant(3d))
+                // .build()
+                )
                 .build())
 
         // vehicles
@@ -451,5 +466,131 @@ public class Generator {
         .addModel(Models.roadModel(VEHICLE_SPEED_KMH, true))
         .addModel(Models.pdpModel(TimeWindowPolicies.TARDY_ALLOWED))
         .build();
+  }
+
+  static class CustomTimeWindowGenerator implements TimeWindowGenerator {
+    private static final long MINIMAL_PICKUP_TW_LENGTH = 10 * 60 * 1000L;
+    private static final long MINIMAL_DELIVERY_TW_LENGTH = 10 * 60 * 1000L;
+
+    private final long urgency;
+    private final StochasticSupplier<Double> pickupTWopening;
+    private final StochasticSupplier<Double> deliveryTWlength;
+    private final StochasticSupplier<Double> deliveryTWopening;
+    private final RandomGenerator rng;
+
+    public CustomTimeWindowGenerator(long urg) {
+      urgency = urg;
+      pickupTWopening = StochasticSuppliers.uniformDouble(0d, 1d);
+      deliveryTWlength = StochasticSuppliers.uniformDouble(0d, 1d);
+      deliveryTWopening = StochasticSuppliers.uniformDouble(0d, 1d);
+      rng = new MersenneTwister();
+    }
+
+    @Override
+    public void generate(long seed, Builder parcelBuilder,
+        TravelTimes travelTimes, long endTime) {
+      rng.setSeed(seed);
+      final long orderAnnounceTime = parcelBuilder.getOrderAnnounceTime();
+      final Point pickup = parcelBuilder.getPickupLocation();
+      final Point delivery = parcelBuilder.getDeliveryLocation();
+
+      final long pickupToDeliveryTT = travelTimes.getShortestTravelTime(pickup,
+          delivery);
+      final long deliveryToDepotTT = travelTimes
+          .getTravelTimeToNearestDepot(delivery);
+
+      // compute range of possible openings
+      long pickupOpening;
+      if (urgency > MINIMAL_PICKUP_TW_LENGTH) {
+
+        // possible values range from 0 .. n
+        // where n = urgency - MINIMAL_PICKUP_TW_LENGTH
+        pickupOpening = orderAnnounceTime + DoubleMath.roundToLong(
+            pickupTWopening.get(rng.nextLong())
+                * (urgency - MINIMAL_PICKUP_TW_LENGTH), RoundingMode.HALF_UP);
+      } else {
+        pickupOpening = orderAnnounceTime;
+      }
+      final TimeWindow pickupTW = new TimeWindow(pickupOpening,
+          orderAnnounceTime + urgency);
+      parcelBuilder.pickupTimeWindow(pickupTW);
+
+      // find boundaries
+      final long minDeliveryOpening = pickupTW.begin
+          + parcelBuilder.getPickupDuration() + pickupToDeliveryTT;
+
+      final long maxDeliveryClosing = endTime - deliveryToDepotTT
+          - parcelBuilder.getDeliveryDuration();
+      long maxDeliveryOpening = maxDeliveryClosing - MINIMAL_DELIVERY_TW_LENGTH;
+      if (maxDeliveryOpening < minDeliveryOpening) {
+        maxDeliveryOpening = minDeliveryOpening;
+      }
+
+      final double openingRange = maxDeliveryOpening - minDeliveryOpening;
+      final long deliveryOpening = minDeliveryOpening
+          + DoubleMath.roundToLong(deliveryTWopening.get(rng.nextLong())
+              * openingRange, RoundingMode.HALF_DOWN);
+
+      final long minDeliveryClosing = Math.min(Math.max(pickupTW.end
+          + parcelBuilder.getPickupDuration() + pickupToDeliveryTT,
+          deliveryOpening + MINIMAL_DELIVERY_TW_LENGTH), maxDeliveryClosing);
+
+      final double closingRange = maxDeliveryClosing - minDeliveryClosing;
+      final long deliveryClosing = minDeliveryClosing
+          + DoubleMath.roundToLong(deliveryTWlength.get(rng.nextLong())
+              * closingRange, RoundingMode.HALF_DOWN);
+
+      final long latestDelivery = endTime - deliveryToDepotTT
+          - parcelBuilder.getDeliveryDuration();
+
+      // final long minDeliveryTWlength = MINIMAL_DELIVERY_TW_LENGTH;
+      // // Math
+      // // .max(MINIMAL_DELIVERY_TW_LENGTH,
+      // // pickupTW.end + parcelBuilder.getPickupDuration()
+      // // + pickupToDeliveryTT);
+      // final long maxDeliveryTWlength = latestDelivery - minDeliveryOpening;
+      //
+      // double factor = maxDeliveryTWlength - minDeliveryTWlength;
+      // if (factor < 0d) {
+      // factor = 0;
+      // }
+      // long deliveryTimeWindowLength = minDeliveryTWlength
+      // + DoubleMath.roundToLong(deliveryTWlength.get(rng.nextLong())
+      // * factor, RoundingMode.HALF_UP);
+      //
+      // // delivery TW may not close before this time:
+      // final long minDeliveryClosing = pickupTW.end
+      // + parcelBuilder.getPickupDuration() + pickupToDeliveryTT;
+      //
+      // if (minDeliveryOpening < minDeliveryClosing - deliveryTimeWindowLength)
+      // {
+      // minDeliveryOpening = minDeliveryClosing - deliveryTimeWindowLength;
+      // }
+      //
+      // final long deliveryOpening;
+      // if (deliveryTimeWindowLength >= maxDeliveryTWlength) {
+      // deliveryOpening = minDeliveryOpening;
+      // deliveryTimeWindowLength = maxDeliveryTWlength;
+      // } else {
+      // deliveryOpening = minDeliveryOpening
+      // + DoubleMath.roundToLong(deliveryTWopening.get(rng.nextLong())
+      // * (maxDeliveryTWlength - deliveryTimeWindowLength),
+      // RoundingMode.HALF_UP);
+      // }
+      //
+      // if (deliveryOpening + deliveryTimeWindowLength > latestDelivery) {
+      // deliveryTimeWindowLength = latestDelivery - deliveryOpening;
+      // }
+
+      final TimeWindow deliveryTW = new TimeWindow(deliveryOpening,
+          deliveryClosing);
+
+      checkArgument(deliveryOpening >= minDeliveryOpening);
+      checkArgument(deliveryOpening + deliveryTW.length() <= latestDelivery);
+      checkArgument(pickupTW.end + parcelBuilder.getPickupDuration()
+          + pickupToDeliveryTT <= deliveryOpening + deliveryTW.length());
+
+      parcelBuilder.deliveryTimeWindow(deliveryTW);
+    }
   }
 }
