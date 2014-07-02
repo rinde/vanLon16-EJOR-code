@@ -21,5 +21,5 @@ df <- data.frame(res)
 
 library(ggplot2)
 
-p <- ggplot(df, aes(x=V1,fill=type)) + geom_histogram(binwidth=.01, alpha=.5, position="identity") + xlab("dynamism") + scale_x_continuous(breaks=seq(0, 1, 0.05))
+p <- ggplot(df, aes(x=V1,fill=type)) + geom_histogram(binwidth=.01, alpha=.5, position="identity") + xlab("dynamism") + scale_x_continuous(breaks=seq(0, 1, 0.05)) + scale_fill_brewer(palette="Set1")
 show(p)
