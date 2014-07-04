@@ -11,13 +11,12 @@ import java.util.List;
 import java.util.Map;
 
 import rinde.logistics.pdptw.solver.CheapestInsertionHeuristic;
-import rinde.logistics.pdptw.solver.Opt2;
 import rinde.sim.pdptw.central.Central;
 import rinde.sim.pdptw.common.ObjectiveFunction;
 import rinde.sim.pdptw.common.StatisticsDTO;
 import rinde.sim.pdptw.experiment.Experiment;
-import rinde.sim.pdptw.experiment.Experiment.ExperimentResults;
 import rinde.sim.pdptw.experiment.Experiment.SimulationResult;
+import rinde.sim.pdptw.experiment.ExperimentResults;
 import rinde.sim.pdptw.experiment.MASConfiguration;
 import rinde.sim.pdptw.gendreau06.Gendreau06ObjectiveFunction;
 import rinde.sim.pdptw.scenario.PDPScenario;
@@ -66,25 +65,25 @@ public class Experimentation {
         .addConfiguration(Central.solverConfiguration(
             CheapestInsertionHeuristic.supplier(SUM),
             "-CheapInsert"))
-        .addConfiguration(Central.solverConfiguration(
-            CheapestInsertionHeuristic.supplier(TARDINESS),
-            "-CheapInsert-Tard"))
-        .addConfiguration(Central.solverConfiguration(
-            CheapestInsertionHeuristic.supplier(DISTANCE),
-            "-CheapInsert-Dist"))
-        .addConfiguration(Central.solverConfiguration(
-            Opt2.supplier(CheapestInsertionHeuristic.supplier(SUM), SUM),
-            "-Opt2-CheapInsert"))
-        .addConfiguration(
-            Central.solverConfiguration(
-                Opt2.supplier(CheapestInsertionHeuristic.supplier(TARDINESS),
-                    TARDINESS),
-                "-Opt2-CheapInsert-Tard"))
-        .addConfiguration(
-            Central.solverConfiguration(
-                Opt2.supplier(CheapestInsertionHeuristic.supplier(DISTANCE),
-                    DISTANCE),
-                "-Opt2-CheapInsert-Dist"))
+        // .addConfiguration(Central.solverConfiguration(
+        // CheapestInsertionHeuristic.supplier(TARDINESS),
+        // "-CheapInsert-Tard"))
+        // .addConfiguration(Central.solverConfiguration(
+        // CheapestInsertionHeuristic.supplier(DISTANCE),
+        // "-CheapInsert-Dist"))
+        // .addConfiguration(Central.solverConfiguration(
+        // Opt2.supplier(CheapestInsertionHeuristic.supplier(SUM), SUM),
+        // "-Opt2-CheapInsert"))
+        // .addConfiguration(
+        // Central.solverConfiguration(
+        // Opt2.supplier(CheapestInsertionHeuristic.supplier(TARDINESS),
+        // TARDINESS),
+        // "-Opt2-CheapInsert-Tard"))
+        // .addConfiguration(
+        // Central.solverConfiguration(
+        // Opt2.supplier(CheapestInsertionHeuristic.supplier(DISTANCE),
+        // DISTANCE),
+        // "-Opt2-CheapInsert-Dist"))
 
         .perform();
 
