@@ -36,7 +36,8 @@ import com.google.common.io.Files;
 
 public class Experimentation {
 
-  static final ObjectiveFunction SUM = Gendreau06ObjectiveFunction.instance();
+  static final Gendreau06ObjectiveFunction SUM = Gendreau06ObjectiveFunction
+      .instance();
   static final ObjectiveFunction DISTANCE = new DistanceObjectiveFunction();
   static final ObjectiveFunction TARDINESS = new TardinessObjectiveFunction();
 
@@ -126,7 +127,9 @@ public class Experimentation {
         configResult.delete();
         try {
           Files
-              .append("dynamism,urgency_mean,cost\n", configResult,
+              .append(
+                  "dynamism,urgency_mean,cost,travel_time,tardiness,over_time,is_valid,scenario_id,random_seed,comp_time\n",
+                  configResult,
                   Charsets.UTF_8);
         } catch (final IOException e1) {
           throw new IllegalStateException(e1);
@@ -149,11 +152,21 @@ public class Experimentation {
                 .get("urgency_mean"));
 
             final double cost = SUM.computeCost(sr.stats);
+            final double travelTime = SUM.travelTime(sr.stats);
+            final double tardiness = SUM.tardiness(sr.stats);
+            final double overTime = SUM.overTime(sr.stats);
+            final boolean isValidResult = SUM.isValidResult(sr.stats);
+            final long computationTime = sr.stats.computationTime;
 
-            Files.append(Joiner.on(",").join(asList(dynamism, urgency, cost))
-                + "\n",
-                configResult, Charsets.UTF_8);
-
+            final String line = Joiner.on(",")
+                .join(asList(dynamism, urgency, cost, travelTime, tardiness,
+                    overTime, isValidResult, pc + id, sr.seed,
+                    computationTime), "\n");
+            if (!isValidResult) {
+              System.err.println("WARNING: FOUND AN INVALID RESULT: ");
+              System.err.println(line);
+            }
+            Files.append(line, configResult, Charsets.UTF_8);
           } catch (final IOException e) {
             throw new IllegalStateException(e);
           }
