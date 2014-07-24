@@ -100,14 +100,14 @@ public class Generator {
 
   private static final long INTENSITY_PERIOD = 60 * 60 * 1000L;
 
-  private static final int TARGET_NUM_INSTANCES = 10;
+  private static final int TARGET_NUM_INSTANCES = 50;
 
   // These parameters influence the dynamism selection settings
   private static final double DYN_STEP_SIZE = 0.05;
   private static final double DYN_BANDWIDTH = 0.01;
 
   public static void main(String[] args) {
-    // main2(args);
+    main2(args);
     final PDPScenario scen;
     final String fileName = "files/dataset/30-0.00#2.scen";
     try {
