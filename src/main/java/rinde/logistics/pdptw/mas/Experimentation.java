@@ -53,7 +53,7 @@ public class Experimentation {
         .listFiles(new FileFilter() {
           @Override
           public boolean accept(File pathname) {
-            return pathname.getName().endsWith(".scen");
+            return pathname.getName().equals("0-0.00#0.scen");
           }
         });
     System.out.println(" found " + files.length + " scenarios.");
@@ -86,19 +86,40 @@ public class Experimentation {
         .addConfiguration(Central.solverConfiguration(
             CheapestInsertionHeuristic.supplier(DISTANCE),
             "-CheapInsert-Dist"))
-        .addConfiguration(Central.solverConfiguration(
-            Opt2.supplier(CheapestInsertionHeuristic.supplier(SUM), SUM),
-            "-Opt2-CheapInsert"))
         .addConfiguration(
             Central.solverConfiguration(
-                Opt2.supplier(CheapestInsertionHeuristic.supplier(TARDINESS),
+                Opt2.breadthFirstSupplier(
+                    CheapestInsertionHeuristic.supplier(SUM), SUM),
+                "-bfsOpt2-CheapInsert"))
+        .addConfiguration(
+            Central.solverConfiguration(
+                Opt2.breadthFirstSupplier(
+                    CheapestInsertionHeuristic.supplier(TARDINESS),
                     TARDINESS),
-                "-Opt2-CheapInsert-Tard"))
+                "-bfsOpt2-CheapInsert-Tard"))
         .addConfiguration(
             Central.solverConfiguration(
-                Opt2.supplier(CheapestInsertionHeuristic.supplier(DISTANCE),
+                Opt2.breadthFirstSupplier(
+                    CheapestInsertionHeuristic.supplier(DISTANCE),
                     DISTANCE),
-                "-Opt2-CheapInsert-Dist"))
+                "-bfsOpt2-CheapInsert-Dist"))
+        .addConfiguration(
+            Central.solverConfiguration(
+                Opt2.depthFirstSupplier(
+                    CheapestInsertionHeuristic.supplier(SUM), SUM),
+                "-dfsOpt2-CheapInsert"))
+        .addConfiguration(
+            Central.solverConfiguration(
+                Opt2.depthFirstSupplier(
+                    CheapestInsertionHeuristic.supplier(TARDINESS),
+                    TARDINESS),
+                "-dfsOpt2-CheapInsert-Tard"))
+        .addConfiguration(
+            Central.solverConfiguration(
+                Opt2.depthFirstSupplier(
+                    CheapestInsertionHeuristic.supplier(DISTANCE),
+                    DISTANCE),
+                "-dfsOpt2-CheapInsert-Dist"))
 
         .perform(args);
 
@@ -128,7 +149,7 @@ public class Experimentation {
         try {
           Files
               .append(
-                  "dynamism,urgency_mean,cost,travel_time,tardiness,over_time,is_valid,scenario_id,random_seed,comp_time\n",
+                  "dynamism,urgency_mean,urgency_sd,cost,travel_time,tardiness,over_time,is_valid,scenario_id,random_seed,comp_time\n",
                   configResult,
                   Charsets.UTF_8);
         } catch (final IOException e1) {
@@ -148,8 +169,10 @@ public class Experimentation {
 
             final double dynamism = Double
                 .parseDouble(properties.get("dynamism"));
-            final double urgency = Double.parseDouble(properties
+            final double urgencyMean = Double.parseDouble(properties
                 .get("urgency_mean"));
+            final double urgencySd = Double.parseDouble(properties
+                .get("urgency_sd"));
 
             final double cost = SUM.computeCost(sr.stats);
             final double travelTime = SUM.travelTime(sr.stats);
@@ -159,9 +182,10 @@ public class Experimentation {
             final long computationTime = sr.stats.computationTime;
 
             final String line = Joiner.on(",")
-                .join(asList(dynamism, urgency, cost, travelTime, tardiness,
-                    overTime, isValidResult, pc + id, sr.seed,
-                    computationTime), "\n");
+                .join(
+                    asList(dynamism, urgencyMean, urgencySd, cost, travelTime,
+                        tardiness, overTime, isValidResult, pc + id, sr.seed,
+                        computationTime), "\n");
             if (!isValidResult) {
               System.err.println("WARNING: FOUND AN INVALID RESULT: ");
               System.err.println(line);
