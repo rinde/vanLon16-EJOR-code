@@ -1,13 +1,11 @@
 package rinde.logistics.pdptw.mas;
 
-import static com.google.common.collect.Lists.newArrayList;
 import static java.util.Arrays.asList;
 
 import java.io.File;
-import java.io.FileFilter;
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.Arrays;
+import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -23,8 +21,7 @@ import rinde.sim.pdptw.experiment.Experiment.SimulationResult;
 import rinde.sim.pdptw.experiment.ExperimentResults;
 import rinde.sim.pdptw.experiment.MASConfiguration;
 import rinde.sim.pdptw.gendreau06.Gendreau06ObjectiveFunction;
-import rinde.sim.pdptw.scenario.PDPScenario;
-import rinde.sim.pdptw.scenario.ScenarioIO;
+import rinde.sim.util.io.FileProvider;
 
 import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
@@ -45,28 +42,28 @@ public class Experimentation {
   static final String RESULTS = "files/results/";
 
   public static void main(String[] args) {
-    System.out.println(Arrays.toString(args));
+    // System.out.println(Arrays.toString(args));
     System.out.println(System.getProperty("jppf.config"));
 
-    System.out.print("Searching..");
-    final File[] files = new File(DATASET)
-        .listFiles(new FileFilter() {
-          @Override
-          public boolean accept(File pathname) {
-            return pathname.getName().equals("0-0.00#0.scen");
-          }
-        });
-    System.out.println(" found " + files.length + " scenarios.");
-    System.out.print("Loading..");
-    final List<PDPScenario> scenarios = newArrayList();
-    for (final File file : files) {
-      try {
-        scenarios.add(ScenarioIO.read(file));
-      } catch (final IOException e) {
-        throw new IllegalStateException(e);
-      }
-    }
-    System.out.println(" loaded " + scenarios.size() + " scenarios.");
+    // System.out.print("Searching..");
+    // final File[] files = new File(DATASET)
+    // .listFiles(new FileFilter() {
+    // @Override
+    // public boolean accept(File pathname) {
+    // return pathname.getName().equals("0-0.00#0.scen");
+    // }
+    // });
+    // System.out.println(" found " + files.length + " scenarios.");
+    // System.out.print("Loading..");
+    // final List<PDPScenario> scenarios = newArrayList();
+    // for (final File file : files) {
+    // try {
+    // scenarios.add(ScenarioIO.read(file));
+    // } catch (final IOException e) {
+    // throw new IllegalStateException(e);
+    // }
+    // }
+    // System.out.println(" loaded " + scenarios.size() + " scenarios.");
 
     final long time = System.currentTimeMillis();
     final Optional<ExperimentResults> results = Experiment
@@ -75,7 +72,10 @@ public class Experimentation {
         .withRandomSeed(123)
         .repeat(10)
         .numBatches(10)
-        .addScenarios(scenarios)
+        .addScenarios(FileProvider.builder()
+            .add(Paths.get(DATASET))
+            .filter("glob:**[01].[0-9]0#[0-5].scen")
+        )
         .addResultListener(new CommandLineProgress())
         .addConfiguration(Central.solverConfiguration(
             CheapestInsertionHeuristic.supplier(SUM),

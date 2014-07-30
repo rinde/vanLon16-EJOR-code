@@ -111,7 +111,7 @@ public class Generator {
     final PDPScenario scen;
     final String fileName = "files/dataset/30-0.00#2.scen";
     try {
-      scen = ScenarioIO.read(new File(fileName));
+      scen = ScenarioIO.read(new File(fileName).toPath());
     } catch (final IOException e) {
       throw new IllegalStateException(e);
     }
@@ -358,7 +358,8 @@ public class Generator {
                     .instanceId(instanceId)
                     .build();
 
-                ScenarioIO.write(finalScenario, new File(fileName + ".scen"));
+                ScenarioIO.write(finalScenario,
+                    new File(fileName + ".scen").toPath());
               } catch (final IOException e) {
                 throw new IllegalStateException(e);
               }
