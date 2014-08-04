@@ -76,7 +76,7 @@ public class Experimentation {
             .add(Paths.get(DATASET))
             .filter("glob:**[01].[0-9]0#[0-5].scen")
         )
-        .addResultListener(new CommandLineProgress())
+        .addResultListener(new CommandLineProgress(System.out))
         .addConfiguration(Central.solverConfiguration(
             CheapestInsertionHeuristic.supplier(SUM),
             "-CheapInsert"))
@@ -121,7 +121,7 @@ public class Experimentation {
                     DISTANCE),
                 "-dfsOpt2-CheapInsert-Dist"))
 
-        .perform(args);
+        .perform(System.out, args);
 
     if (results.isPresent()) {
       final long duration = System.currentTimeMillis() - time;
