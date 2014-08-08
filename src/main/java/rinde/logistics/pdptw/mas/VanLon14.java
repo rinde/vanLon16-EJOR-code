@@ -1,7 +1,7 @@
 package rinde.logistics.pdptw.mas;
 
 
-import rinde.sim.pdptw.scenario.PDPScenario.ProblemClass;
+import rinde.sim.scenario.Scenario.ProblemClass;
 
 public class VanLon14 {
 

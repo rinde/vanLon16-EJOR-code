@@ -33,9 +33,9 @@ import rinde.sim.core.model.pdp.PDPScenarioEvent;
 import rinde.sim.core.model.pdp.Parcel;
 import rinde.sim.core.model.pdp.TimeWindowPolicy.TimeWindowPolicies;
 import rinde.sim.core.model.pdp.Vehicle;
+import rinde.sim.core.pdptw.ParcelDTO.Builder;
 import rinde.sim.pdptw.common.DynamicPDPTWProblem.StopConditions;
 import rinde.sim.pdptw.common.ObjectiveFunction;
-import rinde.sim.pdptw.common.ParcelDTO.Builder;
 import rinde.sim.pdptw.common.TimeLinePanel;
 import rinde.sim.pdptw.experiment.Experiment;
 import rinde.sim.pdptw.gendreau06.Gendreau06ObjectiveFunction;
@@ -45,18 +45,18 @@ import rinde.sim.pdptw.scenario.IntensityFunctions;
 import rinde.sim.pdptw.scenario.Locations;
 import rinde.sim.pdptw.scenario.Metrics;
 import rinde.sim.pdptw.scenario.Models;
-import rinde.sim.pdptw.scenario.PDPScenario;
-import rinde.sim.pdptw.scenario.PDPScenario.ProblemClass;
-import rinde.sim.pdptw.scenario.PDPScenario.SimpleProblemClass;
 import rinde.sim.pdptw.scenario.Parcels;
 import rinde.sim.pdptw.scenario.ScenarioGenerator;
 import rinde.sim.pdptw.scenario.ScenarioGenerator.TravelTimes;
-import rinde.sim.pdptw.scenario.ScenarioIO;
 import rinde.sim.pdptw.scenario.TimeSeries;
 import rinde.sim.pdptw.scenario.TimeSeries.TimeSeriesGenerator;
 import rinde.sim.pdptw.scenario.TimeWindows.TimeWindowGenerator;
 import rinde.sim.pdptw.scenario.Vehicles;
+import rinde.sim.scenario.Scenario;
+import rinde.sim.scenario.Scenario.ProblemClass;
+import rinde.sim.scenario.Scenario.SimpleProblemClass;
 import rinde.sim.scenario.ScenarioController.UICreator;
+import rinde.sim.scenario.ScenarioIO;
 import rinde.sim.ui.View;
 import rinde.sim.ui.renderers.PDPModelRenderer;
 import rinde.sim.ui.renderers.PlaneRoadModelRenderer;
@@ -108,7 +108,7 @@ public class Generator {
 
   public static void main(String[] args) {
     main2(args);
-    final PDPScenario scen;
+    final Scenario scen;
     final String fileName = "files/dataset/30-0.00#2.scen";
     try {
       scen = ScenarioIO.read(new File(fileName).toPath());
@@ -118,7 +118,7 @@ public class Generator {
     run(scen, fileName);
   }
 
-  public static void run(PDPScenario s, final String fileName) {
+  public static void run(Scenario s, final String fileName) {
     final ObjectiveFunction objFunc = Gendreau06ObjectiveFunction.instance();
     Experiment
         .build(Gendreau06ObjectiveFunction.instance())
@@ -299,12 +299,12 @@ public class Generator {
   static void createScenarios(RandomGenerator rng,
       GeneratorSettings generatorSettings, ScenarioGenerator generator,
       double dynLb, double dynUb, int levels) {
-    final List<PDPScenario> scenarios = newArrayList();
+    final List<Scenario> scenarios = newArrayList();
 
-    final Multimap<Double, PDPScenario> dynamismScenariosMap = LinkedHashMultimap
+    final Multimap<Double, Scenario> dynamismScenariosMap = LinkedHashMultimap
         .create();
     while (scenarios.size() < levels * TARGET_NUM_INSTANCES) {
-      final PDPScenario scen = generator.generate(rng, "temp");
+      final Scenario scen = generator.generate(rng, "temp");
       Metrics.checkTimeWindowStrictness(scen);
       final StatisticalSummary urgency = Metrics.measureUrgency(scen);
 
@@ -352,7 +352,7 @@ public class Generator {
                     new File(fileName + ".times"));
 
                 final ProblemClass pc = new SimpleProblemClass(problemClassId);
-                final PDPScenario finalScenario = PDPScenario.builder(pc)
+                final Scenario finalScenario = Scenario.builder(pc)
                     .copyProperties(scen)
                     .problemClass(pc)
                     .instanceId(instanceId)
@@ -372,7 +372,7 @@ public class Generator {
     }
   }
 
-  static void writePropertiesFile(PDPScenario scen, StatisticalSummary urgency,
+  static void writePropertiesFile(Scenario scen, StatisticalSummary urgency,
       double dynamism, String problemClassId, String instanceId,
       GeneratorSettings settings, String fileName) {
     final DateTimeFormatter formatter = ISODateTimeFormat

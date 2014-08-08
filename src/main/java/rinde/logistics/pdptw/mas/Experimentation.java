@@ -13,8 +13,8 @@ import java.util.Map;
 
 import rinde.logistics.pdptw.solver.CheapestInsertionHeuristic;
 import rinde.logistics.pdptw.solver.Opt2;
+import rinde.sim.core.pdptw.AddVehicleEvent;
 import rinde.sim.pdptw.central.Central;
-import rinde.sim.pdptw.common.AddVehicleEvent;
 import rinde.sim.pdptw.common.ObjectiveFunction;
 import rinde.sim.pdptw.common.StatisticsDTO;
 import rinde.sim.pdptw.experiment.CommandLineProgress;
@@ -25,8 +25,8 @@ import rinde.sim.pdptw.experiment.ExperimentCli;
 import rinde.sim.pdptw.experiment.ExperimentResults;
 import rinde.sim.pdptw.experiment.MASConfiguration;
 import rinde.sim.pdptw.gendreau06.Gendreau06ObjectiveFunction;
-import rinde.sim.pdptw.scenario.PDPScenario;
-import rinde.sim.pdptw.scenario.ScenarioIO;
+import rinde.sim.scenario.Scenario;
+import rinde.sim.scenario.ScenarioIO;
 import rinde.sim.util.cli.ArgHandler;
 import rinde.sim.util.cli.ArgumentParser;
 import rinde.sim.util.cli.Menu;
@@ -212,7 +212,7 @@ public class Experimentation {
     }
   }
 
-  static class NumVehiclesScenarioParser implements Function<Path, PDPScenario> {
+  static class NumVehiclesScenarioParser implements Function<Path, Scenario> {
     final int numVehicles;
 
     NumVehiclesScenarioParser(int num) {
@@ -220,11 +220,11 @@ public class Experimentation {
     }
 
     @Override
-    public PDPScenario apply(Path input) {
-      PDPScenario scenario;
+    public Scenario apply(Path input) {
+      Scenario scenario;
       try {
         scenario = ScenarioIO.read(input);
-        return PDPScenario
+        return Scenario
             .builder(scenario.getProblemClass())
             .copyProperties(scenario)
             .ensureFrequency(
