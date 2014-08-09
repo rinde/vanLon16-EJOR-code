@@ -13,7 +13,6 @@ import java.util.Map;
 
 import rinde.logistics.pdptw.solver.CheapestInsertionHeuristic;
 import rinde.logistics.pdptw.solver.Opt2;
-import rinde.sim.core.pdptw.AddVehicleEvent;
 import rinde.sim.pdptw.central.Central;
 import rinde.sim.pdptw.common.ObjectiveFunction;
 import rinde.sim.pdptw.common.StatisticsDTO;
@@ -25,6 +24,7 @@ import rinde.sim.pdptw.experiment.ExperimentCli;
 import rinde.sim.pdptw.experiment.ExperimentResults;
 import rinde.sim.pdptw.experiment.MASConfiguration;
 import rinde.sim.pdptw.gendreau06.Gendreau06ObjectiveFunction;
+import rinde.sim.scenario.AddVehicleEvent;
 import rinde.sim.scenario.Scenario;
 import rinde.sim.scenario.ScenarioIO;
 import rinde.sim.util.cli.ArgHandler;
