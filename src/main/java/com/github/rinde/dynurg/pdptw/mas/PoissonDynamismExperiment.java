@@ -1,4 +1,4 @@
-package rinde.logistics.pdptw.mas;
+package com.github.rinde.dynurg.pdptw.mas;
 
 import static com.google.common.collect.Lists.newArrayList;
 
@@ -10,13 +10,12 @@ import org.apache.commons.math3.random.MersenneTwister;
 import org.apache.commons.math3.random.RandomGenerator;
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 
-import rinde.sim.pdptw.scenario.IntensityFunctions;
-import rinde.sim.pdptw.scenario.Metrics;
-import rinde.sim.pdptw.scenario.TimeSeries;
-import rinde.sim.pdptw.scenario.TimeSeries.TimeSeriesGenerator;
-import rinde.sim.util.StochasticSupplier;
-import rinde.sim.util.StochasticSuppliers;
-
+import com.github.rinde.rinsim.pdptw.scenario.IntensityFunctions;
+import com.github.rinde.rinsim.pdptw.scenario.Metrics;
+import com.github.rinde.rinsim.pdptw.scenario.TimeSeries;
+import com.github.rinde.rinsim.pdptw.scenario.TimeSeries.TimeSeriesGenerator;
+import com.github.rinde.rinsim.util.StochasticSupplier;
+import com.github.rinde.rinsim.util.StochasticSuppliers;
 import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
 import com.google.common.io.Files;

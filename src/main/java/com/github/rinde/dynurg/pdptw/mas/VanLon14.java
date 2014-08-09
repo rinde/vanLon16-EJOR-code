@@ -1,7 +1,7 @@
-package rinde.logistics.pdptw.mas;
+package com.github.rinde.dynurg.pdptw.mas;
 
 
-import rinde.sim.scenario.Scenario.ProblemClass;
+import com.github.rinde.rinsim.scenario.Scenario.ProblemClass;
 
 public class VanLon14 {
 

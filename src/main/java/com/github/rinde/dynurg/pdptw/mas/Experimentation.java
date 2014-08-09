@@ -1,4 +1,4 @@
-package rinde.logistics.pdptw.mas;
+package com.github.rinde.dynurg.pdptw.mas;
 
 import static java.util.Arrays.asList;
 
@@ -11,28 +11,27 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-import rinde.logistics.pdptw.solver.CheapestInsertionHeuristic;
-import rinde.logistics.pdptw.solver.Opt2;
-import rinde.sim.pdptw.central.Central;
-import rinde.sim.pdptw.common.ObjectiveFunction;
-import rinde.sim.pdptw.common.StatisticsDTO;
-import rinde.sim.pdptw.experiment.CommandLineProgress;
-import rinde.sim.pdptw.experiment.Experiment;
-import rinde.sim.pdptw.experiment.Experiment.Builder;
-import rinde.sim.pdptw.experiment.Experiment.SimulationResult;
-import rinde.sim.pdptw.experiment.ExperimentCli;
-import rinde.sim.pdptw.experiment.ExperimentResults;
-import rinde.sim.pdptw.experiment.MASConfiguration;
-import rinde.sim.pdptw.gendreau06.Gendreau06ObjectiveFunction;
-import rinde.sim.scenario.AddVehicleEvent;
-import rinde.sim.scenario.Scenario;
-import rinde.sim.scenario.ScenarioIO;
-import rinde.sim.util.cli.ArgHandler;
-import rinde.sim.util.cli.ArgumentParser;
-import rinde.sim.util.cli.Menu;
-import rinde.sim.util.cli.Option;
-import rinde.sim.util.io.FileProvider;
-
+import com.github.rinde.logistics.pdptw.solver.CheapestInsertionHeuristic;
+import com.github.rinde.logistics.pdptw.solver.Opt2;
+import com.github.rinde.rinsim.pdptw.central.Central;
+import com.github.rinde.rinsim.pdptw.common.ObjectiveFunction;
+import com.github.rinde.rinsim.pdptw.common.StatisticsDTO;
+import com.github.rinde.rinsim.pdptw.experiment.CommandLineProgress;
+import com.github.rinde.rinsim.pdptw.experiment.Experiment;
+import com.github.rinde.rinsim.pdptw.experiment.ExperimentCli;
+import com.github.rinde.rinsim.pdptw.experiment.ExperimentResults;
+import com.github.rinde.rinsim.pdptw.experiment.MASConfiguration;
+import com.github.rinde.rinsim.pdptw.experiment.Experiment.Builder;
+import com.github.rinde.rinsim.pdptw.experiment.Experiment.SimulationResult;
+import com.github.rinde.rinsim.pdptw.gendreau06.Gendreau06ObjectiveFunction;
+import com.github.rinde.rinsim.scenario.AddVehicleEvent;
+import com.github.rinde.rinsim.scenario.Scenario;
+import com.github.rinde.rinsim.scenario.ScenarioIO;
+import com.github.rinde.rinsim.util.cli.ArgHandler;
+import com.github.rinde.rinsim.util.cli.ArgumentParser;
+import com.github.rinde.rinsim.util.cli.Menu;
+import com.github.rinde.rinsim.util.cli.Option;
+import com.github.rinde.rinsim.util.io.FileProvider;
 import com.google.common.base.Charsets;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
