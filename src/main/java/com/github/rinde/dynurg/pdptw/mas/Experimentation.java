@@ -13,12 +13,12 @@ import java.util.Map;
 
 import com.github.rinde.logistics.pdptw.solver.CheapestInsertionHeuristic;
 import com.github.rinde.logistics.pdptw.solver.Opt2;
+import com.github.rinde.rinsim.central.Central;
 import com.github.rinde.rinsim.cli.ArgHandler;
 import com.github.rinde.rinsim.cli.ArgumentParser;
 import com.github.rinde.rinsim.cli.Menu;
 import com.github.rinde.rinsim.cli.Option;
 import com.github.rinde.rinsim.io.FileProvider;
-import com.github.rinde.rinsim.pdptw.central.Central;
 import com.github.rinde.rinsim.pdptw.common.ObjectiveFunction;
 import com.github.rinde.rinsim.pdptw.common.StatisticsDTO;
 import com.github.rinde.rinsim.pdptw.experiment.CommandLineProgress;
