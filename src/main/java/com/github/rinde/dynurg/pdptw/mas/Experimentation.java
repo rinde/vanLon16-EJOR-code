@@ -23,11 +23,11 @@ import com.github.rinde.rinsim.pdptw.common.ObjectiveFunction;
 import com.github.rinde.rinsim.pdptw.common.StatisticsDTO;
 import com.github.rinde.rinsim.pdptw.experiment.CommandLineProgress;
 import com.github.rinde.rinsim.pdptw.experiment.Experiment;
+import com.github.rinde.rinsim.pdptw.experiment.Experiment.Builder;
+import com.github.rinde.rinsim.pdptw.experiment.Experiment.SimulationResult;
 import com.github.rinde.rinsim.pdptw.experiment.ExperimentCli;
 import com.github.rinde.rinsim.pdptw.experiment.ExperimentResults;
 import com.github.rinde.rinsim.pdptw.experiment.MASConfiguration;
-import com.github.rinde.rinsim.pdptw.experiment.Experiment.Builder;
-import com.github.rinde.rinsim.pdptw.experiment.Experiment.SimulationResult;
 import com.github.rinde.rinsim.pdptw.gendreau06.Gendreau06ObjectiveFunction;
 import com.github.rinde.rinsim.scenario.AddVehicleEvent;
 import com.github.rinde.rinsim.scenario.Scenario;
@@ -139,7 +139,7 @@ public class Experimentation {
 
     final Multimap<MASConfiguration, SimulationResult> groupedResults = LinkedHashMultimap
         .create();
-    for (final SimulationResult sr : results.results) {
+    for (final SimulationResult sr : results.sortedResults()) {
       groupedResults.put(sr.masConfiguration, sr);
     }
 

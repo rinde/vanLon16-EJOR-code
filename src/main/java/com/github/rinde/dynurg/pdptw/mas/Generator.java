@@ -31,33 +31,33 @@ import com.github.rinde.rinsim.core.Simulator;
 import com.github.rinde.rinsim.core.model.pdp.Depot;
 import com.github.rinde.rinsim.core.model.pdp.PDPScenarioEvent;
 import com.github.rinde.rinsim.core.model.pdp.Parcel;
-import com.github.rinde.rinsim.core.model.pdp.Vehicle;
 import com.github.rinde.rinsim.core.model.pdp.TimeWindowPolicy.TimeWindowPolicies;
+import com.github.rinde.rinsim.core.model.pdp.Vehicle;
 import com.github.rinde.rinsim.core.pdptw.ParcelDTO.Builder;
 import com.github.rinde.rinsim.geom.Point;
+import com.github.rinde.rinsim.pdptw.common.DynamicPDPTWProblem.StopConditions;
 import com.github.rinde.rinsim.pdptw.common.ObjectiveFunction;
 import com.github.rinde.rinsim.pdptw.common.TimeLinePanel;
-import com.github.rinde.rinsim.pdptw.common.DynamicPDPTWProblem.StopConditions;
 import com.github.rinde.rinsim.pdptw.experiment.Experiment;
 import com.github.rinde.rinsim.pdptw.gendreau06.Gendreau06ObjectiveFunction;
-import com.github.rinde.rinsim.pdptw.measure.Analysis;
-import com.github.rinde.rinsim.pdptw.scenario.Depots;
-import com.github.rinde.rinsim.pdptw.scenario.IntensityFunctions;
-import com.github.rinde.rinsim.pdptw.scenario.Locations;
-import com.github.rinde.rinsim.pdptw.scenario.Metrics;
-import com.github.rinde.rinsim.pdptw.scenario.Models;
-import com.github.rinde.rinsim.pdptw.scenario.Parcels;
-import com.github.rinde.rinsim.pdptw.scenario.ScenarioGenerator;
-import com.github.rinde.rinsim.pdptw.scenario.TimeSeries;
-import com.github.rinde.rinsim.pdptw.scenario.Vehicles;
-import com.github.rinde.rinsim.pdptw.scenario.ScenarioGenerator.TravelTimes;
-import com.github.rinde.rinsim.pdptw.scenario.TimeSeries.TimeSeriesGenerator;
-import com.github.rinde.rinsim.pdptw.scenario.TimeWindows.TimeWindowGenerator;
 import com.github.rinde.rinsim.scenario.Scenario;
-import com.github.rinde.rinsim.scenario.ScenarioIO;
 import com.github.rinde.rinsim.scenario.Scenario.ProblemClass;
 import com.github.rinde.rinsim.scenario.Scenario.SimpleProblemClass;
 import com.github.rinde.rinsim.scenario.ScenarioController.UICreator;
+import com.github.rinde.rinsim.scenario.generator.Depots;
+import com.github.rinde.rinsim.scenario.generator.IntensityFunctions;
+import com.github.rinde.rinsim.scenario.generator.Locations;
+import com.github.rinde.rinsim.scenario.generator.Metrics;
+import com.github.rinde.rinsim.scenario.generator.Models;
+import com.github.rinde.rinsim.scenario.generator.Parcels;
+import com.github.rinde.rinsim.scenario.generator.ScenarioGenerator;
+import com.github.rinde.rinsim.scenario.generator.TimeSeries;
+import com.github.rinde.rinsim.scenario.generator.Vehicles;
+import com.github.rinde.rinsim.scenario.generator.ScenarioGenerator.TravelTimes;
+import com.github.rinde.rinsim.scenario.generator.TimeSeries.TimeSeriesGenerator;
+import com.github.rinde.rinsim.scenario.generator.TimeWindows.TimeWindowGenerator;
+import com.github.rinde.rinsim.scenario.measure.Analysis;
+import com.github.rinde.rinsim.scenario.ScenarioIO;
 import com.github.rinde.rinsim.ui.View;
 import com.github.rinde.rinsim.ui.renderers.PDPModelRenderer;
 import com.github.rinde.rinsim.ui.renderers.PlaneRoadModelRenderer;
@@ -115,7 +115,7 @@ public class Generator {
     } catch (final IOException e) {
       throw new IllegalStateException(e);
     }
-    run(scen, fileName);
+    // run(scen, fileName);
   }
 
   public static void run(Scenario s, final String fileName) {
