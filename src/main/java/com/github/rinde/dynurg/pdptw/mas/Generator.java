@@ -44,20 +44,21 @@ import com.github.rinde.rinsim.scenario.Scenario;
 import com.github.rinde.rinsim.scenario.Scenario.ProblemClass;
 import com.github.rinde.rinsim.scenario.Scenario.SimpleProblemClass;
 import com.github.rinde.rinsim.scenario.ScenarioController.UICreator;
+import com.github.rinde.rinsim.scenario.ScenarioIO;
 import com.github.rinde.rinsim.scenario.generator.Depots;
 import com.github.rinde.rinsim.scenario.generator.IntensityFunctions;
 import com.github.rinde.rinsim.scenario.generator.Locations;
+import com.github.rinde.rinsim.scenario.generator.Locations.LocationGenerator;
 import com.github.rinde.rinsim.scenario.generator.Metrics;
 import com.github.rinde.rinsim.scenario.generator.Models;
 import com.github.rinde.rinsim.scenario.generator.Parcels;
 import com.github.rinde.rinsim.scenario.generator.ScenarioGenerator;
-import com.github.rinde.rinsim.scenario.generator.TimeSeries;
-import com.github.rinde.rinsim.scenario.generator.Vehicles;
 import com.github.rinde.rinsim.scenario.generator.ScenarioGenerator.TravelTimes;
+import com.github.rinde.rinsim.scenario.generator.TimeSeries;
 import com.github.rinde.rinsim.scenario.generator.TimeSeries.TimeSeriesGenerator;
 import com.github.rinde.rinsim.scenario.generator.TimeWindows.TimeWindowGenerator;
+import com.github.rinde.rinsim.scenario.generator.Vehicles;
 import com.github.rinde.rinsim.scenario.measure.Analysis;
-import com.github.rinde.rinsim.scenario.ScenarioIO;
 import com.github.rinde.rinsim.ui.View;
 import com.github.rinde.rinsim.ui.renderers.PDPModelRenderer;
 import com.github.rinde.rinsim.ui.renderers.PlaneRoadModelRenderer;
@@ -107,7 +108,9 @@ public class Generator {
   private static final double DYN_BANDWIDTH = 0.01;
 
   public static void main(String[] args) {
-    main2(args);
+    final RandomGenerator rng = new MersenneTwister(123L);
+    // generateWithDistinctLocations(rng);
+    generateWithFixedLocations(rng);
     final Scenario scen;
     final String fileName = "files/dataset/30-0.00#2.scen";
     try {
@@ -115,7 +118,7 @@ public class Generator {
     } catch (final IOException e) {
       throw new IllegalStateException(e);
     }
-    // run(scen, fileName);
+    run(scen, fileName);
   }
 
   public static void run(Scenario s, final String fileName) {
@@ -131,7 +134,6 @@ public class Generator {
                 ImmutableList.of(AuctionCommModel.supplier())))
 
         .showGui(new UICreator() {
-
           @Override
           public void createUI(Simulator sim) {
             final UiSchema schema = new UiSchema(false);
@@ -150,28 +152,36 @@ public class Generator {
         .perform();
   }
 
-  static class GeneratorSettings {
-    final TimeSeriesType timeSeriesType;
-    final long urgency;
-    final long dayLength;
-    final long officeHours;
-    final ImmutableMap<String, String> properties;
-
-    GeneratorSettings(TimeSeriesType type, long urg, long dayLen, long officeH,
-        Map<String, String> props) {
-      timeSeriesType = type;
-      urgency = urg;
-      dayLength = dayLen;
-      officeHours = officeH;
-      properties = ImmutableMap.copyOf(props);
-    }
+  /**
+   * Generates all scenarios. Each scenario has a randomly generated location
+   * list.
+   * @param rng The master random number generator.
+   */
+  public static void generateWithDistinctLocations(RandomGenerator rng) {
+    generate(rng, Locations.builder()
+        .min(0d)
+        .max(AREA_WIDTH)
+        .buildUniform());
   }
 
-  enum TimeSeriesType {
-    SINE, HOMOGENOUS, NORMAL, UNIFORM;
+  /**
+   * Generates all scenarios. Each scenario has exactly the same location list.
+   * @param rng The master random number generator.
+   */
+  public static void generateWithFixedLocations(RandomGenerator rng) {
+    final List<Point> locations = Locations.builder()
+        .min(0d)
+        .max(AREA_WIDTH)
+        .buildUniform()
+        .generate(rng.nextLong(), NUM_ORDERS * 2);
+
+    generate(rng, Locations.builder()
+        .min(0d)
+        .max(AREA_WIDTH)
+        .buildFixed(locations));
   }
 
-  public static void main2(String[] args) {
+  private static void generate(RandomGenerator rng, LocationGenerator lg) {
     final List<Long> urgencyLevels = Longs.asList(0, 5, 10, 15, 20, 25, 30, 35,
         40, 45);
 
@@ -260,20 +270,19 @@ public class Generator {
       System.out.println(".");
 
       generatorsMap.put(sineSettings,
-          createGenerator(SCENARIO_LENGTH, urgency, sineTsg));
+          createGenerator(SCENARIO_LENGTH, urgency, sineTsg, lg));
       generatorsMap.put(homogSettings,
-          createGenerator(SCENARIO_LENGTH, urgency, homogTsg));
+          createGenerator(SCENARIO_LENGTH, urgency, homogTsg, lg));
       generatorsMap.put(normalSettings,
-          createGenerator(SCENARIO_LENGTH, urgency, normalTsg));
+          createGenerator(SCENARIO_LENGTH, urgency, normalTsg, lg));
       generatorsMap.put(uniformSettings,
-          createGenerator(SCENARIO_LENGTH, urgency, uniformTsg));
+          createGenerator(SCENARIO_LENGTH, urgency, uniformTsg, lg));
     }
 
     final ImmutableMap<GeneratorSettings, ScenarioGenerator> scenarioGenerators = generatorsMap
         .build();
 
     System.out.println("num generators: " + scenarioGenerators.size());
-    final RandomGenerator rng = new MersenneTwister(123L);
     for (final Entry<GeneratorSettings, ScenarioGenerator> entry : scenarioGenerators
         .entrySet()) {
 
@@ -366,7 +375,6 @@ public class Generator {
               scenarios.add(scen);
             }
           }
-
         }
       }
     }
@@ -411,7 +419,7 @@ public class Generator {
   }
 
   static ScenarioGenerator createGenerator(long scenarioLength,
-      long urgency, TimeSeriesGenerator tsg) {
+      long urgency, TimeSeriesGenerator tsg, LocationGenerator lg) {
     return ScenarioGenerator
         .builder()
         // global
@@ -429,14 +437,12 @@ public class Generator {
             Parcels
                 .builder()
                 .announceTimes(
-                    TimeSeries.filter(tsg, TimeSeries.numEvents(NUM_ORDERS)))
+                    TimeSeries.filter(tsg,
+                        TimeSeries.numEventsPredicate(NUM_ORDERS)))
                 .pickupDurations(constant(PICKUP_DURATION))
                 .deliveryDurations(constant(DELIVERY_DURATION))
                 .neededCapacities(constant(0))
-                .locations(Locations.builder()
-                    .min(0d)
-                    .max(AREA_WIDTH)
-                    .uniform())
+                .locations(lg)
                 .timeWindows(new CustomTimeWindowGenerator(urgency)
                 // TimeWindows.builder()
                 // .pickupUrgency(constant(urgency))
@@ -467,6 +473,27 @@ public class Generator {
         .addModel(Models.roadModel(VEHICLE_SPEED_KMH, true))
         .addModel(Models.pdpModel(TimeWindowPolicies.TARDY_ALLOWED))
         .build();
+  }
+
+  static class GeneratorSettings {
+    final TimeSeriesType timeSeriesType;
+    final long urgency;
+    final long dayLength;
+    final long officeHours;
+    final ImmutableMap<String, String> properties;
+
+    GeneratorSettings(TimeSeriesType type, long urg, long dayLen, long officeH,
+        Map<String, String> props) {
+      timeSeriesType = type;
+      urgency = urg;
+      dayLength = dayLen;
+      officeHours = officeH;
+      properties = ImmutableMap.copyOf(props);
+    }
+  }
+
+  enum TimeSeriesType {
+    SINE, HOMOGENOUS, NORMAL, UNIFORM;
   }
 
   static class CustomTimeWindowGenerator implements TimeWindowGenerator {
