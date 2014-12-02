@@ -26,9 +26,9 @@ import org.apache.commons.math3.random.RandomGenerator;
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 
 import com.github.rinde.rinsim.scenario.generator.IntensityFunctions;
-import com.github.rinde.rinsim.scenario.generator.Metrics;
 import com.github.rinde.rinsim.scenario.generator.TimeSeries;
 import com.github.rinde.rinsim.scenario.generator.TimeSeries.TimeSeriesGenerator;
+import com.github.rinde.rinsim.scenario.measure.Metrics;
 import com.github.rinde.rinsim.util.StochasticSupplier;
 import com.github.rinde.rinsim.util.StochasticSuppliers;
 import com.google.common.base.Charsets;

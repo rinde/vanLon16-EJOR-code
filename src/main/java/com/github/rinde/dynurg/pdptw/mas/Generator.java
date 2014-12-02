@@ -64,7 +64,6 @@ import com.github.rinde.rinsim.scenario.generator.Depots;
 import com.github.rinde.rinsim.scenario.generator.IntensityFunctions;
 import com.github.rinde.rinsim.scenario.generator.Locations;
 import com.github.rinde.rinsim.scenario.generator.Locations.LocationGenerator;
-import com.github.rinde.rinsim.scenario.generator.Metrics;
 import com.github.rinde.rinsim.scenario.generator.Models;
 import com.github.rinde.rinsim.scenario.generator.Parcels;
 import com.github.rinde.rinsim.scenario.generator.ScenarioGenerator;
@@ -74,6 +73,7 @@ import com.github.rinde.rinsim.scenario.generator.TimeSeries.TimeSeriesGenerator
 import com.github.rinde.rinsim.scenario.generator.TimeWindows.TimeWindowGenerator;
 import com.github.rinde.rinsim.scenario.generator.Vehicles;
 import com.github.rinde.rinsim.scenario.measure.Analysis;
+import com.github.rinde.rinsim.scenario.measure.Metrics;
 import com.github.rinde.rinsim.ui.View;
 import com.github.rinde.rinsim.ui.renderers.PDPModelRenderer;
 import com.github.rinde.rinsim.ui.renderers.PlaneRoadModelRenderer;
