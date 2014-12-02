@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.rinde.dynurg.pdptw.mas;
+package com.github.rinde.dynurg;
 
 import static java.util.Arrays.asList;
 
@@ -58,6 +58,11 @@ import com.google.common.collect.LinkedHashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.io.Files;
 
+/**
+ * This is the main experimentation class.
+ * 
+ * @author Rinde van Lon <rinde.vanlon@cs.kuleuven.be>
+ */
 public class Experimentation {
   static final Gendreau06ObjectiveFunction SUM = Gendreau06ObjectiveFunction
       .instance();

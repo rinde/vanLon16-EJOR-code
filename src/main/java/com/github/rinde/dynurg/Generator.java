@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.rinde.dynurg.pdptw.mas;
+package com.github.rinde.dynurg;
 
 import static com.github.rinde.rinsim.util.StochasticSuppliers.constant;
 import static com.google.common.base.Preconditions.checkArgument;

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.rinde.dynurg.pdptw.mas;
+package com.github.rinde.dynurg;
 
 
 import com.github.rinde.rinsim.scenario.Scenario.ProblemClass;
