@@ -33,16 +33,15 @@ import com.github.rinde.rinsim.cli.ArgHandler;
 import com.github.rinde.rinsim.cli.ArgumentParser;
 import com.github.rinde.rinsim.cli.Menu;
 import com.github.rinde.rinsim.cli.Option;
+import com.github.rinde.rinsim.experiment.CommandLineProgress;
+import com.github.rinde.rinsim.experiment.Experiment;
+import com.github.rinde.rinsim.experiment.Experiment.SimulationResult;
+import com.github.rinde.rinsim.experiment.ExperimentCli;
+import com.github.rinde.rinsim.experiment.ExperimentResults;
+import com.github.rinde.rinsim.experiment.MASConfiguration;
 import com.github.rinde.rinsim.io.FileProvider;
 import com.github.rinde.rinsim.pdptw.common.ObjectiveFunction;
 import com.github.rinde.rinsim.pdptw.common.StatisticsDTO;
-import com.github.rinde.rinsim.pdptw.experiment.CommandLineProgress;
-import com.github.rinde.rinsim.pdptw.experiment.Experiment;
-import com.github.rinde.rinsim.pdptw.experiment.Experiment.Builder;
-import com.github.rinde.rinsim.pdptw.experiment.Experiment.SimulationResult;
-import com.github.rinde.rinsim.pdptw.experiment.ExperimentCli;
-import com.github.rinde.rinsim.pdptw.experiment.ExperimentResults;
-import com.github.rinde.rinsim.pdptw.experiment.MASConfiguration;
 import com.github.rinde.rinsim.pdptw.gendreau06.Gendreau06ObjectiveFunction;
 import com.github.rinde.rinsim.scenario.AddVehicleEvent;
 import com.github.rinde.rinsim.scenario.Scenario;
@@ -139,7 +138,8 @@ public class Experimentation {
             experimentBuilder,
             new ArgHandler<Experiment.Builder, Integer>() {
               @Override
-              public void execute(Builder subject, Optional<Integer> argument) {
+              public void execute(Experiment.Builder subject,
+                  Optional<Integer> argument) {
                 subject.setScenarioReader(new NumVehiclesScenarioParser(
                     argument.get()));
               }
