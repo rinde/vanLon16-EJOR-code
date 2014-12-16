@@ -1,12 +1,12 @@
-# In logistics dynamism and urgency are distinct concepts
+# On dynamism and urgency
 Accompanying webpage for
 
- > *In logistics dynamism and urgency are distinct concepts*, R.R.S. van Lon, E. Ferrante, A.E. Turgut, T. Wenseleers, G. Vanden Berghe, T. Holvoet, European Journal of Operational Research, 2015 (submitted).
+ > *On dynamism and urgency*, R.R.S. van Lon, E. Ferrante, A.E. Turgut, T. Wenseleers, G. Vanden Berghe, T. Holvoet, European Journal of Operational Research, 2015 (submitted).
 
-For the final version of this paper this webpage and repository will be archived using [zenodo.org](https://zenodo.org/), this means that all code and data of the experiments will be accesible via a [DOI](http://www.doi.org/). This ensures the availability of all resources for the future.
+For the final version of the paper this webpage and repository will be archived using [zenodo.org](https://zenodo.org/). Consequently, all code and data of the experiments will be accessible via a [DOI](http://www.doi.org/)  ensuring the availability of all resources for the future.
 
 ## Overview
-Since this paper is part of a long term research effort, the code used for the experiments is distributed over several repositories. The code in this repository is the glue that instantiates and binds the code from the other repositories to create a cohesive experiment setup.
+Since the paper is part of a long term research effort, the code used for the experiments is distributed over several repositories. The code in the current repository is the glue that instantiates and binds the code from the other repositories to create a cohesive experiment setup.
 
 ### Main experiment
 
