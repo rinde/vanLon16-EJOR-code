@@ -54,12 +54,12 @@ import com.github.rinde.rinsim.geom.Point;
 import com.github.rinde.rinsim.pdptw.common.DynamicPDPTWProblem.StopConditions;
 import com.github.rinde.rinsim.pdptw.common.ObjectiveFunction;
 import com.github.rinde.rinsim.pdptw.common.TimeLinePanel;
-import com.github.rinde.rinsim.pdptw.gendreau06.Gendreau06ObjectiveFunction;
 import com.github.rinde.rinsim.scenario.Scenario;
 import com.github.rinde.rinsim.scenario.Scenario.ProblemClass;
 import com.github.rinde.rinsim.scenario.Scenario.SimpleProblemClass;
 import com.github.rinde.rinsim.scenario.ScenarioController.UICreator;
 import com.github.rinde.rinsim.scenario.ScenarioIO;
+import com.github.rinde.rinsim.scenario.gendreau06.Gendreau06ObjectiveFunction;
 import com.github.rinde.rinsim.scenario.generator.Depots;
 import com.github.rinde.rinsim.scenario.generator.IntensityFunctions;
 import com.github.rinde.rinsim.scenario.generator.Locations;
@@ -72,8 +72,8 @@ import com.github.rinde.rinsim.scenario.generator.TimeSeries;
 import com.github.rinde.rinsim.scenario.generator.TimeSeries.TimeSeriesGenerator;
 import com.github.rinde.rinsim.scenario.generator.TimeWindows.TimeWindowGenerator;
 import com.github.rinde.rinsim.scenario.generator.Vehicles;
-import com.github.rinde.rinsim.scenario.measure.Analysis;
 import com.github.rinde.rinsim.scenario.measure.Metrics;
+import com.github.rinde.rinsim.scenario.measure.MetricsIO;
 import com.github.rinde.rinsim.ui.View;
 import com.github.rinde.rinsim.ui.renderers.PDPModelRenderer;
 import com.github.rinde.rinsim.ui.renderers.PlaneRoadModelRenderer;
@@ -125,9 +125,9 @@ public class Generator {
   public static void main(String[] args) {
     final RandomGenerator rng = new MersenneTwister(123L);
     // generateWithDistinctLocations(rng);
-    generateWithFixedLocations(rng);
+    // generateWithFixedLocations(rng);
     final Scenario scen;
-    final String fileName = "files/dataset/30-0.00#2.scen";
+    final String fileName = "files/archive/dataset-v2-20140724/0-0.05#0.scen";
     try {
       scen = ScenarioIO.read(new File(fileName).toPath());
     } catch (final IOException e) {
@@ -148,6 +148,7 @@ public class Generator {
                     CheapestInsertionHeuristic.supplier(objFunc)),
                 ImmutableList.of(AuctionCommModel.supplier())))
 
+        .withThreads(1)
         .showGui(new UICreator() {
           @Override
           public void createUI(Simulator sim) {
@@ -369,9 +370,9 @@ public class Generator {
                 Files.createParentDirs(new File(fileName));
                 writePropertiesFile(scen, urgency, dynamism, problemClassId,
                     instanceId, generatorSettings, fileName);
-                Analysis.writeLocationList(Metrics.getServicePoints(scen),
+                MetricsIO.writeLocationList(Metrics.getServicePoints(scen),
                     new File(fileName + ".points"));
-                Analysis.writeTimes(scen.getTimeWindow().end,
+                MetricsIO.writeTimes(scen.getTimeWindow().end,
                     Metrics.getArrivalTimes(scen),
                     new File(fileName + ".times"));
 

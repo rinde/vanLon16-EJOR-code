@@ -7,7 +7,7 @@
 
 	<name>DynUrg</name>
 	<description></description>
-	<url>http://github.com/rinde/DynUrg</url>
+	<url>https://github.com/rinde/dynamism-urgency-2015-code</url>
 	<inceptionYear>2014</inceptionYear>
 
 	<licenses>
@@ -26,7 +26,7 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<rinsim.version>3.0.0-SNAPSHOT</rinsim.version>
+		<rinsim.version>3.0.0</rinsim.version>
 		<rinlog.version>1.0.0-SNAPSHOT</rinlog.version>
 	</properties>
 
@@ -113,7 +113,7 @@
 		</dependency>
 		<dependency>
 			<groupId>com.github.rinde</groupId>
-			<artifactId>rinsim-problem</artifactId>
+			<artifactId>rinsim-scenario-util</artifactId>
 			<version>${rinsim.version}</version>
 		</dependency>
 		<dependency>
