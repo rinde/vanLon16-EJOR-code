@@ -95,12 +95,18 @@ import com.google.common.io.Files;
 import com.google.common.math.DoubleMath;
 import com.google.common.primitives.Longs;
 
+/**
+ * Generator that creates the dataset needed for the dynamism and urgency
+ * experiment.
+ * @author Rinde van Lon <rinde.vanlon@cs.kuleuven.be>
+ */
 public class Generator {
   // all times are in ms unless otherwise indicated
-
   private static final long TICK_SIZE = 1000L;
   private static final double VEHICLE_SPEED_KMH = 50d;
   private static final int NUM_VEHICLES = 10;
+
+  // n x n (km)
   private static final double AREA_WIDTH = 10;
 
   private static final long SCENARIO_HOURS = 12L;
@@ -122,25 +128,28 @@ public class Generator {
   private static final double DYN_STEP_SIZE = 0.05;
   private static final double DYN_BANDWIDTH = 0.01;
 
+  private static final String DATASET_DIR = "files/dataset/";
+
   public static void main(String[] args) {
     final RandomGenerator rng = new MersenneTwister(123L);
-    // generateWithDistinctLocations(rng);
+    generateWithDistinctLocations(rng);
     // generateWithFixedLocations(rng);
+
+    // run( "files/archive/dataset-v2-20140724/0-0.05#0.scen");
+  }
+
+  @SuppressWarnings("unused")
+  private static void run(final String fileName) {
     final Scenario scen;
-    final String fileName = "files/archive/dataset-v2-20140724/0-0.05#0.scen";
     try {
       scen = ScenarioIO.read(new File(fileName).toPath());
     } catch (final IOException e) {
       throw new IllegalStateException(e);
     }
-    run(scen, fileName);
-  }
-
-  public static void run(Scenario s, final String fileName) {
     final ObjectiveFunction objFunc = Gendreau06ObjectiveFunction.instance();
     Experiment
         .build(Gendreau06ObjectiveFunction.instance())
-        .addScenario(s)
+        .addScenario(scen)
         .addConfiguration(
             new TruckConfiguration(SolverRoutePlanner
                 .supplier(CheapestInsertionHeuristic.supplier(objFunc)),
@@ -364,7 +373,7 @@ public class Generator {
                   targetDyn);
               System.out.println();
               System.out.println(" > ACCEPT " + problemClassId);
-              final String fileName = "files/dataset/" + problemClassId
+              final String fileName = DATASET_DIR + problemClassId
                   + instanceId;
               try {
                 Files.createParentDirs(new File(fileName));
