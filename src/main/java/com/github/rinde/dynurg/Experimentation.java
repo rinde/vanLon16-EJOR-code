@@ -40,9 +40,9 @@ import com.github.rinde.rinsim.experiment.ExperimentCli;
 import com.github.rinde.rinsim.experiment.ExperimentResults;
 import com.github.rinde.rinsim.experiment.MASConfiguration;
 import com.github.rinde.rinsim.io.FileProvider;
+import com.github.rinde.rinsim.pdptw.common.AddVehicleEvent;
 import com.github.rinde.rinsim.pdptw.common.ObjectiveFunction;
 import com.github.rinde.rinsim.pdptw.common.StatisticsDTO;
-import com.github.rinde.rinsim.scenario.AddVehicleEvent;
 import com.github.rinde.rinsim.scenario.Scenario;
 import com.github.rinde.rinsim.scenario.ScenarioIO;
 import com.github.rinde.rinsim.scenario.gendreau06.Gendreau06ObjectiveFunction;
@@ -59,12 +59,12 @@ import com.google.common.io.Files;
 
 /**
  * This is the main experimentation class.
- * 
+ *
  * @author Rinde van Lon <rinde.vanlon@cs.kuleuven.be>
  */
 public class Experimentation {
   static final Gendreau06ObjectiveFunction SUM = Gendreau06ObjectiveFunction
-      .instance();
+    .instance();
   static final ObjectiveFunction DISTANCE = new DistanceObjectiveFunction();
   static final ObjectiveFunction TARDINESS = new TardinessObjectiveFunction();
 
@@ -72,79 +72,79 @@ public class Experimentation {
   static final String RESULTS = "files/results/";
 
   public static void main(String[] args) {
-    System.out.println(System.getProperty("jppf.config"));
+    System.out.println("jppf.config: " + System.getProperty("jppf.config"));
 
     final long time = System.currentTimeMillis();
     final Experiment.Builder experimentBuilder = Experiment
-        .build(SUM)
-        .computeDistributed()
-        .withRandomSeed(123)
-        .repeat(10)
-        .numBatches(10)
-        .addScenarios(FileProvider.builder()
-            .add(Paths.get(DATASET))
-            .filter("glob:**[01].[0-9]0#[0-5].scen")
-        )
-        .addResultListener(new CommandLineProgress(System.out))
-        .addConfiguration(Central.solverConfiguration(
-            CheapestInsertionHeuristic.supplier(SUM),
-            "-CheapInsert"))
-        .addConfiguration(Central.solverConfiguration(
+      .build(SUM)
+      .computeDistributed()
+      .withRandomSeed(123)
+      .repeat(10)
+      .numBatches(10)
+      .addScenarios(FileProvider.builder()
+        .add(Paths.get(DATASET))
+        .filter("glob:**[01].[0-9]0#[0-5].scen")
+      )
+      .addResultListener(new CommandLineProgress(System.out))
+      .addConfiguration(Central.solverConfiguration(
+        CheapestInsertionHeuristic.supplier(SUM),
+        "-CheapInsert"))
+      .addConfiguration(Central.solverConfiguration(
+        CheapestInsertionHeuristic.supplier(TARDINESS),
+        "-CheapInsert-Tard"))
+      .addConfiguration(Central.solverConfiguration(
+        CheapestInsertionHeuristic.supplier(DISTANCE),
+        "-CheapInsert-Dist"))
+      .addConfiguration(
+        Central.solverConfiguration(
+          Opt2.breadthFirstSupplier(
+            CheapestInsertionHeuristic.supplier(SUM), SUM),
+          "-bfsOpt2-CheapInsert"))
+      .addConfiguration(
+        Central.solverConfiguration(
+          Opt2.breadthFirstSupplier(
             CheapestInsertionHeuristic.supplier(TARDINESS),
-            "-CheapInsert-Tard"))
-        .addConfiguration(Central.solverConfiguration(
+            TARDINESS),
+          "-bfsOpt2-CheapInsert-Tard"))
+      .addConfiguration(
+        Central.solverConfiguration(
+          Opt2.breadthFirstSupplier(
             CheapestInsertionHeuristic.supplier(DISTANCE),
-            "-CheapInsert-Dist"))
-        .addConfiguration(
-            Central.solverConfiguration(
-                Opt2.breadthFirstSupplier(
-                    CheapestInsertionHeuristic.supplier(SUM), SUM),
-                "-bfsOpt2-CheapInsert"))
-        .addConfiguration(
-            Central.solverConfiguration(
-                Opt2.breadthFirstSupplier(
-                    CheapestInsertionHeuristic.supplier(TARDINESS),
-                    TARDINESS),
-                "-bfsOpt2-CheapInsert-Tard"))
-        .addConfiguration(
-            Central.solverConfiguration(
-                Opt2.breadthFirstSupplier(
-                    CheapestInsertionHeuristic.supplier(DISTANCE),
-                    DISTANCE),
-                "-bfsOpt2-CheapInsert-Dist"))
-        .addConfiguration(
-            Central.solverConfiguration(
-                Opt2.depthFirstSupplier(
-                    CheapestInsertionHeuristic.supplier(SUM), SUM),
-                "-dfsOpt2-CheapInsert"))
-        .addConfiguration(
-            Central.solverConfiguration(
-                Opt2.depthFirstSupplier(
-                    CheapestInsertionHeuristic.supplier(TARDINESS),
-                    TARDINESS),
-                "-dfsOpt2-CheapInsert-Tard"))
-        .addConfiguration(
-            Central.solverConfiguration(
-                Opt2.depthFirstSupplier(
-                    CheapestInsertionHeuristic.supplier(DISTANCE),
-                    DISTANCE),
-                "-dfsOpt2-CheapInsert-Dist"));
+            DISTANCE),
+          "-bfsOpt2-CheapInsert-Dist"))
+      .addConfiguration(
+        Central.solverConfiguration(
+          Opt2.depthFirstSupplier(
+            CheapestInsertionHeuristic.supplier(SUM), SUM),
+          "-dfsOpt2-CheapInsert"))
+      .addConfiguration(
+        Central.solverConfiguration(
+          Opt2.depthFirstSupplier(
+            CheapestInsertionHeuristic.supplier(TARDINESS),
+            TARDINESS),
+          "-dfsOpt2-CheapInsert-Tard"))
+      .addConfiguration(
+        Central.solverConfiguration(
+          Opt2.depthFirstSupplier(
+            CheapestInsertionHeuristic.supplier(DISTANCE),
+            DISTANCE),
+          "-dfsOpt2-CheapInsert-Dist"));
 
     final Menu m = ExperimentCli.createMenuBuilder(experimentBuilder)
-        .add(Option.builder("nv", ArgumentParser.INTEGER)
-            .longName("number-of-vehicles")
-            .description("Changes the number of vehicles in all scenarios.")
-            .build(),
-            experimentBuilder,
-            new ArgHandler<Experiment.Builder, Integer>() {
-              @Override
-              public void execute(Experiment.Builder subject,
-                  Optional<Integer> argument) {
-                subject.setScenarioReader(new NumVehiclesScenarioParser(
-                    argument.get()));
-              }
-            })
-        .build();
+      .add(Option.builder("nv", ArgumentParser.INTEGER)
+        .longName("number-of-vehicles")
+        .description("Changes the number of vehicles in all scenarios.")
+        .build(),
+        experimentBuilder,
+        new ArgHandler<Experiment.Builder, Integer>() {
+          @Override
+          public void execute(Experiment.Builder subject,
+            Optional<Integer> argument) {
+            subject.setScenarioReader(new NumVehiclesScenarioParser(
+              argument.get()));
+          }
+        })
+      .build();
 
     final Optional<String> error = m.safeExecute(args);
     if (error.isPresent()) {
@@ -155,10 +155,10 @@ public class Experimentation {
 
     final long duration = System.currentTimeMillis() - time;
     System.out.println("Done, computed " + results.results.size()
-        + " simulations in " + duration / 1000d + "s");
+      + " simulations in " + duration / 1000d + "s");
 
     final Multimap<MASConfiguration, SimulationResult> groupedResults = LinkedHashMultimap
-        .create();
+      .create();
     for (final SimulationResult sr : results.sortedResults()) {
       groupedResults.put(sr.masConfiguration, sr);
     }
@@ -166,8 +166,8 @@ public class Experimentation {
     for (final MASConfiguration config : groupedResults.keySet()) {
       final Collection<SimulationResult> group = groupedResults.get(config);
 
-      final File configResult = new File(RESULTS + config.toString()
-          + ".csv");
+      final File configResult = new File(RESULTS + config.getName()
+        + ".csv");
       try {
         Files.createParentDirs(configResult);
       } catch (final IOException e1) {
@@ -177,10 +177,10 @@ public class Experimentation {
       configResult.delete();
       try {
         Files
-            .append(
-                "dynamism,urgency_mean,urgency_sd,cost,travel_time,tardiness,over_time,is_valid,scenario_id,random_seed,comp_time,num_vehicles\n",
-                configResult,
-                Charsets.UTF_8);
+          .append(
+            "dynamism,urgency_mean,urgency_sd,cost,travel_time,tardiness,over_time,is_valid,scenario_id,random_seed,comp_time,num_vehicles\n",
+            configResult,
+            Charsets.UTF_8);
       } catch (final IOException e1) {
         throw new IllegalStateException(e1);
       }
@@ -188,22 +188,22 @@ public class Experimentation {
       for (final SimulationResult sr : group) {
         final String pc = sr.scenario.getProblemClass().getId();
         final String id = sr.scenario.getProblemInstanceId();
-        final int numVehicles = FluentIterable.from(sr.scenario.asList())
-            .filter(AddVehicleEvent.class).size();
+        final int numVehicles = FluentIterable.from(sr.scenario.getEvents())
+          .filter(AddVehicleEvent.class).size();
         try {
           final List<String> propsStrings = Files.readLines(new File(
-              "files/dataset/" + pc + id + ".properties"),
-              Charsets.UTF_8);
+            "files/dataset/" + pc + id + ".properties"),
+            Charsets.UTF_8);
           final Map<String, String> properties = Splitter.on("\n")
-              .withKeyValueSeparator(" = ")
-              .split(Joiner.on("\n").join(propsStrings));
+            .withKeyValueSeparator(" = ")
+            .split(Joiner.on("\n").join(propsStrings));
 
           final double dynamism = Double
-              .parseDouble(properties.get("dynamism"));
+            .parseDouble(properties.get("dynamism"));
           final double urgencyMean = Double.parseDouble(properties
-              .get("urgency_mean"));
+            .get("urgency_mean"));
           final double urgencySd = Double.parseDouble(properties
-              .get("urgency_sd"));
+            .get("urgency_sd"));
 
           final double cost = SUM.computeCost(sr.stats);
           final double travelTime = SUM.travelTime(sr.stats);
@@ -213,12 +213,12 @@ public class Experimentation {
           final long computationTime = sr.stats.computationTime;
 
           final String line = Joiner.on(",")
-              .appendTo(new StringBuilder(),
-                  asList(dynamism, urgencyMean, urgencySd, cost, travelTime,
-                      tardiness, overTime, isValidResult, pc + id, sr.seed,
-                      computationTime, numVehicles))
-              .append(System.lineSeparator())
-              .toString();
+            .appendTo(new StringBuilder(),
+              asList(dynamism, urgencyMean, urgencySd, cost, travelTime,
+                tardiness, overTime, isValidResult, pc + id, sr.seed,
+                computationTime, numVehicles))
+            .append(System.lineSeparator())
+            .toString();
           if (!isValidResult) {
             System.err.println("WARNING: FOUND AN INVALID RESULT: ");
             System.err.println(line);
@@ -244,12 +244,12 @@ public class Experimentation {
       try {
         scenario = ScenarioIO.read(input);
         return Scenario
-            .builder(scenario.getProblemClass())
-            .copyProperties(scenario)
-            .ensureFrequency(
-                Predicates.instanceOf(AddVehicleEvent.class),
-                numVehicles)
-            .build();
+          .builder(scenario.getProblemClass())
+          .copyProperties(scenario)
+          .ensureFrequency(
+            Predicates.instanceOf(AddVehicleEvent.class),
+            numVehicles)
+          .build();
       } catch (final IOException e) {
         throw new IllegalStateException(e);
       }
@@ -257,7 +257,7 @@ public class Experimentation {
   }
 
   static class DistanceObjectiveFunction implements ObjectiveFunction,
-      Serializable {
+    Serializable {
     private static final long serialVersionUID = 3604634797953982385L;
 
     @Override
@@ -277,7 +277,7 @@ public class Experimentation {
   }
 
   static class TardinessObjectiveFunction implements ObjectiveFunction,
-      Serializable {
+    Serializable {
     private static final long serialVersionUID = -3989091829481513511L;
 
     @Override
@@ -293,7 +293,7 @@ public class Experimentation {
     @Override
     public String printHumanReadableFormat(StatisticsDTO stats) {
       return String.format("Tardiness %1.3f.", stats.pickupTardiness
-          + stats.deliveryTardiness);
+        + stats.deliveryTardiness);
     }
   }
 }

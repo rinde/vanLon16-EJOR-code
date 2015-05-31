@@ -4,4 +4,5 @@ target/
 .DS_Store
 org.sonar.ide.eclipse.core.prefs
 files/dataset/
+files/results/
 *.Rhistory
