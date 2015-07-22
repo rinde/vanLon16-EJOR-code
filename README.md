@@ -1,7 +1,7 @@
-# On dynamism and urgency
+# Measures for dynamism and urgency in logistics
 Accompanying webpage for
 
- > *On dynamism and urgency*, R.R.S. van Lon, E. Ferrante, A.E. Turgut, T. Wenseleers, G. Vanden Berghe, T. Holvoet, European Journal of Operational Research, 2015 (submitted).
+ > *Measures for dynamism and urgency in logistics*, R.R.S. van Lon, E. Ferrante, A.E. Turgut, T. Wenseleers, G. Vanden Berghe, T. Holvoet, European Journal of Operational Research, 2015 (submitted).
 
 For the final version of the paper this webpage and repository will be archived using [zenodo.org](https://zenodo.org/). Consequently, all code and data of the experiments will be accessible via a [DOI](http://www.doi.org/)  ensuring the availability of all resources for the future.
 
@@ -13,10 +13,21 @@ Since the paper is part of a long term research effort, the code used for the ex
 ##### Main experiment
 
 The code of the main experiment sits in the following files:
- + Code that generates the scenarios used in the experiments: [generator](src/main/java/com/github/rinde/dynurg/Generator.java).
- + The scenarios that were generated can be found here __scenarios will be published after acceptance__.
- + Code for performing the experiment: [experiment](src/main/java/com/github/rinde/dynurg/Experimentation.java).
- + The raw results of the experiments can be found here __raw results will be published after acceptance__.
+
+ 1. Scenario files
+   + Code that generates the scenarios used in the experiments: [generator](src/main/java/com/github/rinde/dynurg/Generator.java).
+   + The scenarios that were generated can be found here __scenarios will be published after acceptance__.
+
+ 1. Experiment results
+   + Code for performing the experiment: [experiment](src/main/java/com/github/rinde/dynurg/Experimentation.java).
+   + The raw results of the experiments can be found here __raw results will be published after acceptance__.
+
+ 1. Analysis
+
+   For doing the model selection based on the Akaike Information Criterion we have used the following two R-scripts. These scripts require the results from the previous step in ```files/results```.
+   + [script for cheapest insertion heuristic](files/multipleRegressionCentral-Solver-CheapInsert.R)
+   + [script for 2-opt heuristic](files/multipleRegressionCentral-Solver-bfsOpt2-CheapInsert.R)
+  
 
 ##### Dynamism generation experiment
 This is the experiment to find with what parameters and methods certain dynamism levels can be obtained.
