@@ -26,8 +26,8 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<rinsim.version>4.0.0-SNAPSHOT</rinsim.version>
-		<rinlog.version>2.0.0-SNAPSHOT</rinlog.version>
+		<rinsim.version>3.0.0</rinsim.version>
+		<rinlog.version>1.0.0</rinlog.version>
 		<exec.mainClass>com.github.rinde.dynurg.Experimentation</exec.mainClass>
 	</properties>
 
@@ -117,6 +117,16 @@
 			<artifactId>rinsim-scenario-util</artifactId>
 			<version>${rinsim.version}</version>
 		</dependency>
+		<dependency>
+            <groupId>com.github.rinde</groupId>
+            <artifactId>rinsim-experiment</artifactId>
+            <version>${rinsim.version}</version>
+        </dependency>
+            <dependency>
+            <groupId>com.github.rinde</groupId>
+            <artifactId>rinsim-ui</artifactId>
+            <version>${rinsim.version}</version>
+        </dependency>
 		<dependency>
 			<groupId>com.github.rinde</groupId>
 			<artifactId>rinlog</artifactId>
