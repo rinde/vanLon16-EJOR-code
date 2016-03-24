@@ -30,7 +30,7 @@ The code of the main experiment sits in the following files:
   
 
 ##### Dynamism generation experiment
-This is the experiment to find with what parameters and methods certain dynamism levels can be obtained.
+This is the experiment for finding the parameters and methods to generate the different dynamism levels.
  + Code for performing the experiment can be found [here]([experiment](src/main/java/com/github/rinde/dynurg/Experimentation.java)).
 
 ##### Dynamism computation example
