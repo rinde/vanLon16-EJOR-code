@@ -1,7 +1,7 @@
 # Measures of dynamism and urgency in logistics
 This repository contains the code that was used to perform the experiments described in:
 
- > *Measures of dynamism and urgency in logistics*. Rinde R.S. van Lon, Eliseo Ferrante, Ali E. Turgut, Tom Wenseleers, Greet Vanden Berghe, and Tom Holvoet.  European Journal of Operational Research. ISSN 0377-2217. http://dx.doi.org/10.1016/j.ejor.2016.03.021.
+ > *Measures of dynamism and urgency in logistics*. Rinde R.S. van Lon, Eliseo Ferrante, Ali E. Turgut, Tom Wenseleers, Greet Vanden Berghe, and Tom Holvoet.  European Journal of Operational Research (2016). ISSN 0377-2217. http://dx.doi.org/10.1016/j.ejor.2016.03.021.
 
 ## Overview
 Since the paper is part of a long term research effort, the code used for the experiments is distributed over several repositories. The code in the current repository is the glue that instantiates and binds the code from the other repositories to create a cohesive experiment setup.
